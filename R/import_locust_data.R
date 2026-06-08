@@ -80,6 +80,113 @@ import_locust_data <- function(filepath = NULL,
     # ── Source FAO Locust Hub ─────────────────────────────────
   } else if (source == "fao") {
 
+    message("Téléchargement depuis FAO/iNaturalist...")
+
+    # ── Essai 1 : FAO Locust Hub ───────────────────────────
+    fao_urls <- c(
+      paste0("https://locust-hub-hqfao.hub.arcgis.com/",
+             "datasets/FAO::locust-presence-data.geojson"),
+      paste0("https://opendata.arcgis.com/datasets/",
+             "f30cf8d14dab4c87a1af76ec99a56200_0.geojson")
+    )
+
+    fao_ok <- FALSE
+
+    for (fao_url in fao_urls) {
+      tryCatch({
+        if (!requireNamespace("sf", quietly = TRUE)) {
+          install.packages("sf")
+        }
+        message("Essai URL FAO : ", fao_url)
+        fao_data <- sf::st_read(fao_url, quiet = TRUE)
+        coords   <- sf::st_coordinates(fao_data)
+        df <- data.frame(
+          latitude  = coords[, 2],
+          longitude = coords[, 1],
+          date      = as.Date(
+            substr(as.character(fao_data$STARTDATE), 1, 10)
+          ),
+          presence  = 1
+        )
+        message("FAO : ", nrow(df), " occurrences téléchargées")
+        fao_ok <- TRUE
+        break
+      }, error = function(e) {
+        message("URL FAO indisponible : ", e$message)
+      })
+    }
+
+    # ── Essai 2 : iNaturalist si FAO échoue ───────────────
+    if (!fao_ok) {
+      message("FAO indisponible — utilisation iNaturalist...")
+
+      if (!requireNamespace("jsonlite", quietly = TRUE)) {
+        install.packages("jsonlite")
+      }
+
+      tryCatch({
+        url_inat <- paste0(
+          "https://api.inaturalist.org/v1/observations?",
+          "taxon_name=Schistocerca+gregaria&",
+          "has_geo=true&",
+          "per_page=", limit, "&",
+          "order=desc&order_by=created_at"
+        )
+
+        data_inat <- jsonlite::fromJSON(url_inat)
+        obs       <- data_inat$results
+
+        # Extraire coordonnées
+        lats <- sapply(obs$geojson$coordinates,
+                       function(x) if (length(x) >= 2) x[2] else NA)
+        lons <- sapply(obs$geojson$coordinates,
+                       function(x) if (length(x) >= 1) x[1] else NA)
+
+        df <- data.frame(
+          latitude  = as.numeric(lats),
+          longitude = as.numeric(lons),
+          date      = as.Date(substr(obs$observed_on, 1, 10)),
+          presence  = 1
+        )
+
+        df <- df[!is.na(df$latitude) &
+                   !is.na(df$longitude) &
+                   !is.na(df$date), ]
+
+        message("iNaturalist : ", nrow(df),
+                " occurrences téléchargées")
+        fao_ok <- TRUE
+
+      }, error = function(e) {
+        message("iNaturalist erreur : ", e$message)
+      })
+    }
+
+    # ── Essai 3 : GBIF si tout échoue ─────────────────────
+    if (!fao_ok) {
+      message("Utilisation GBIF comme dernier recours...")
+
+      if (!requireNamespace("rgbif", quietly = TRUE)) {
+        install.packages("rgbif")
+      }
+
+      gbif_data <- rgbif::occ_search(
+        scientificName = "Schistocerca gregaria",
+        hasCoordinate  = TRUE,
+        limit          = limit
+      )
+
+      df_raw <- gbif_data$data
+      df <- data.frame(
+        latitude  = df_raw$decimalLatitude,
+        longitude = df_raw$decimalLongitude,
+        date      = as.Date(substr(df_raw$eventDate, 1, 10)),
+        presence  = 1
+      )
+
+      message("GBIF : ", nrow(df), " occurrences chargées")
+    }
+
     message("Téléchargement depuis FAO Locust Hub...")
 
     # URLs FAO à essayer

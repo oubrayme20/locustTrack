@@ -60,3 +60,4 @@ remove.packages("locustTrack")
 devtools::document()
 devtools::install()
 devtools::test()
+
