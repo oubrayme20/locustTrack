@@ -1,38 +1,79 @@
 # ============================================================
-# Séance 3 — Modélisation écologique (SDM)
-# Package locustTrack — Salma Oubrayme
+# Séance 3 — Modélisation Écologique (SDM)
+# Appliqué au projet locustTrack
+# Auteur : Salma Oubrayme — IAV Hassan II
 # ============================================================
 
 library(locustTrack)
+library(terra)
+library(sf)
+library(geodata)
 
-# ── 1. Données d'occurrence ──────────────────────────────────
-data("locust_sample")
-df_clean <- clean_occurrences(locust_sample)
+# ══════════════════════════════════════════════════════════
+# 1. DONNÉES D'OCCURRENCE (vu en séance)
+# ══════════════════════════════════════════════════════════
 
-# ── 2. Variables environnementales ───────────────────────────
+# Télécharger depuis GBIF (rgbif)
+df <- import_locust_data(source = "gbif", limit = 100)
+cat("Occurrences GBIF :", nrow(df), "\n")
+head(df, 5)
+
+# Nettoyage spatial
+df_clean <- clean_occurrences(df)
+
+# Conversion en objet sf (données vectorielles)
+df_sf <- sf::st_as_sf(
+  df_clean,
+  coords = c("longitude", "latitude"),
+  crs    = 4326
+)
+plot(sf::st_geometry(df_sf),
+     main = "Occurrences Schistocerca gregaria",
+     pch  = 16,
+     col  = "red")
+
+# ══════════════════════════════════════════════════════════
+# 2. VARIABLES ENVIRONNEMENTALES (vu en séance)
+# ══════════════════════════════════════════════════════════
+
+# WorldClim — données bioclimatiques
 clim <- download_climate_data(var = "prec", res = 10)
-ndvi <- download_ndvi(2023, mois = 6, simuler = TRUE)
+cat("Couches climatiques :", terra::nlyr(clim), "\n")
 
-# ── 3. Background points (pseudo-absences) ───────────────────
-# Ratio 1:1 présences:pseudo-absences
+# NDVI MODIS
+ndvi <- download_ndvi(2023, mois = 6, simuler = TRUE)
+terra::plot(ndvi, main = "NDVI MODIS — Juin 2023")
+
+# ══════════════════════════════════════════════════════════
+# 3. BACKGROUND POINTS (vu en séance)
+# ══════════════════════════════════════════════════════════
+
+# spatSample() — méthode vue en cours
+set.seed(42)
 dataset_bg <- generate_background_points(
   occurrences = df_clean,
   raster_ref  = clim,
-  n_points    = nrow(df_clean)
+  n_points    = nrow(df_clean)  # ratio 1:1
 )
+
 table(dataset_bg$presence)
 
-# ── 4. Préparer les prédicteurs ──────────────────────────────
-dataset <- prepare_predictors(
-  occurrences = dataset_bg,
-  climat      = clim,
-  ndvi        = ndvi
-)
+# ══════════════════════════════════════════════════════════
+# 4. MODÈLE SDM RANDOM FOREST (vu en séance)
+# ══════════════════════════════════════════════════════════
 
-# ── 5. Modèle SDM Random Forest ──────────────────────────────
+dataset <- prepare_predictors(dataset_bg, clim, ndvi)
+
 rf <- train_rf_model(dataset, ntree = 500)
+eval <- evaluate_model(rf)
 
-# ── 6. Carte de risque d'invasion ────────────────────────────
+cat("AUC :", eval$auc, "\n")
+print(eval$metriques)
+
+# ══════════════════════════════════════════════════════════
+# 5. CARTE DE RISQUE D'INVASION (vu en séance)
+# ══════════════════════════════════════════════════════════
+
 risk <- predict_risk_map(
   rf_result   = rf,
   climat      = clim,
@@ -41,12 +82,17 @@ risk <- predict_risk_map(
   seuil_eleve = 0.6
 )
 
-# Visualiser
-terra::plot(risk$risque_classe,
-            col  = c("#2ecc71", "#f39c12", "#e74c3c"),
-            main = "Carte de risque — Schistocerca gregaria")
+# Carte continue
+terra::plot(risk$risque_continu,
+            main = "Probabilité de présence",
+            col  = colorRampPalette(
+              c("#ffffcc", "#fd8d3c", "#800026"))(100))
 
-# ── 7. Résumé par région ─────────────────────────────────────
+# Carte classée faible/moyen/élevé
+terra::plot(risk$risque_classe,
+            main = "Carte de risque d'invasion",
+            col  = c("#2ecc71", "#f39c12", "#e74c3c"))
+
+# Résumé par région + surface km²
 summary_risk <- summarize_risk_regions(risk)
 print(summary_risk$resume)
-print(summary_risk$stats_pays)
