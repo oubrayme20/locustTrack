@@ -293,13 +293,33 @@ generate_report <- function(occurrences,
 </body>
 </html>')
 
-  # ── Sauvegarder le fichier HTML ───────────────────────────────────────────
-  nom_fichier <- paste0("rapport_locusttrack_", annee, ".html")
-  chemin      <- file.path(dossier, nom_fichier)
+  # ── Sauvegarder le fichier HTML ───────────────────────────
+  nom_html <- paste0("rapport_locusttrack_", annee, ".html")
+  nom_pdf  <- paste0("rapport_locusttrack_", annee, ".pdf")
+  chemin_html <- file.path(dossier, nom_html)
+  chemin_pdf  <- file.path(dossier, nom_pdf)
 
-  writeLines(html_content, chemin, useBytes = TRUE)
+  writeLines(html_content, chemin_html, useBytes = TRUE)
+  message("Rapport HTML généré : ", chemin_html)
 
-  message("Rapport complet généré : ", chemin)
+  # ── Export PDF ────────────────────────────────────────────
+  if (!requireNamespace("pagedown", quietly = TRUE)) {
+    install.packages("pagedown")
+  }
 
-  return(chemin)
+  tryCatch({
+    pagedown::chrome_print(
+      input  = chemin_html,
+      output = chemin_pdf
+    )
+    message("Rapport PDF généré : ", chemin_pdf)
+  }, error = function(e) {
+    message("Export PDF non disponible : ", e$message)
+    message("Ouvrez le HTML dans Chrome et faites File → Print → Save as PDF")
+  })
+
+  return(list(
+    html = chemin_html,
+    pdf  = chemin_pdf
+  ))
 }
