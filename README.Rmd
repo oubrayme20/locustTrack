@@ -1,0 +1,126 @@
+---
+title: "README"
+output: html_document
+---
+
+# locustTrack 🦗
+
+> Prédiction des zones favorables aux criquets pèlerins et risque d'invasion
+
+## Description
+
+**locustTrack** est un package R permettant de :
+
+- 📍 Analyser les conditions favorables aux criquets pèlerins
+- 🗺️ Modéliser les zones à risque d'invasion
+- 🌿 Suivre la végétation après les pluies (Greenup)
+- 📊 Produire des cartes de risque mensuelles
+- 📄 Générer des bulletins d'alerte simples
+
+**Espèce étudiée :** *Schistocerca gregaria* (Criquet pèlerin)
+
+**Zones d'étude :** Afrique subsaharienne, Maghreb, Moyen-Orient
+
+---
+
+## Installation
+
+```r
+# Installer depuis GitHub
+remotes::install_github("SalmaOubrayme/locustTrack")
+
+# Ou localement
+devtools::install()
+```
+
+---
+
+## Fonctions principales
+
+| Fonction | Description |
+|---|---|
+| `import_locust_data()` | Importer les données d'occurrence CSV |
+| `clean_occurrences()` | Nettoyer les coordonnées spatiales |
+| `download_climate_data()` | Télécharger données WorldClim |
+| `download_ndvi()` | Télécharger données NDVI MODIS |
+| `calculate_greenup()` | Analyser le verdissement post-pluie |
+| `prepare_predictors()` | Préparer les variables pour le modèle |
+| `generate_background_points()` | Générer les pseudo-absences |
+| `train_rf_model()` | Entraîner le modèle Random Forest |
+| `evaluate_model()` | Évaluer les performances (AUC, Accuracy) |
+| `predict_risk_map()` | Prédire la carte de risque |
+| `summarize_risk_regions()` | Résumer les zones à risque |
+| `plot_risk_map()` | Cartographier le risque |
+| `generate_alert_bulletin()` | Générer un bulletin d'alerte HTML |
+| `generate_report()` | Générer un rapport complet HTML |
+
+---
+
+## Exemple d'utilisation
+
+```r
+library(locustTrack)
+
+# 1. Importer les données
+df <- import_locust_data("occurrences.csv")
+
+# 2. Nettoyer les occurrences
+df_clean <- clean_occurrences(df)
+
+# 3. Télécharger les données climatiques
+clim <- download_climate_data(var = "prec", res = 10)
+
+# 4. Télécharger le NDVI
+ndvi <- download_ndvi(annee = 2023, mois = 6)
+
+# 5. Entraîner le modèle
+dataset <- prepare_predictors(df_clean, clim, ndvi)
+rf      <- train_rf_model(dataset)
+
+# 6. Évaluer le modèle
+eval <- evaluate_model(rf)
+
+# 7. Carte de risque
+risk <- predict_risk_map(rf, clim, ndvi)
+plot_risk_map(risk, ndvi)
+
+# 8. Rapport complet
+generate_report(df_clean, rf, eval, risk,
+                summarize_risk_regions(risk))
+```
+
+---
+
+## Structure du package
+
+```
+locustTrack/
+├── R/                    ← 14 fonctions
+├── data/                 ← locust_sample.rda
+├── data-raw/             ← scripts de génération
+├── man/                  ← documentation auto-générée
+├── tests/testthat/       ← tests unitaires
+├── vignettes/            ← tutoriel
+└── DESCRIPTION
+```
+
+---
+
+## Données utilisées
+
+- **Occurrences :** GBIF / FAO Locust Hub
+- **Climat :** WorldClim
+- **Végétation :** NDVI MODIS
+- **Modèle :** Random Forest
+
+---
+
+## Auteur
+
+**Salma Oubrayme**
+
+---
+
+## Licence
+
+MIT
