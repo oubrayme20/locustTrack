@@ -17,7 +17,7 @@ import_locust_data(
 \item{filepath}{Chemin vers le fichier CSV. Par défaut NULL}
 
 \item{source}{Source des données : "csv", "gbif", "fao".
-Par défaut "csv"}
+Par défaut "csv". Si "fao" → essaie FAO puis iNaturalist puis GBIF}
 
 \item{lat_col}{Nom colonne latitude. Par défaut "latitude"}
 
@@ -25,7 +25,7 @@ Par défaut "csv"}
 
 \item{date_col}{Nom colonne date. Par défaut "date"}
 
-\item{limit}{Nombre max d'occurrences GBIF. Par défaut 500}
+\item{limit}{Nombre max d'occurrences. Par défaut 500}
 }
 \value{
 Un data.frame nettoyé avec les colonnes :
@@ -35,9 +35,9 @@ Un data.frame nettoyé avec les colonnes :
 \item{presence}{Présence du criquet (1)}
 }
 \description{
-Importe les données de criquets pèlerins depuis trois sources :
-un fichier CSV local, GBIF directement via rgbif,
-ou FAO Locust Hub. Nettoie et convertit en objet spatial.
+Importe les données de criquets pèlerins depuis quatre sources :
+un fichier CSV local, GBIF via rgbif, FAO Locust Hub,
+ou iNaturalist via API REST.
 }
 \examples{
 \dontrun{
@@ -47,7 +47,7 @@ df <- import_locust_data("occurrences.csv", source = "csv")
 # Depuis GBIF directement
 df <- import_locust_data(source = "gbif", limit = 200)
 
-# Depuis FAO Locust Hub
+# Depuis FAO (fallback iNaturalist si indisponible)
 df <- import_locust_data(source = "fao")
 
 head(df)

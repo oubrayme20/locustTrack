@@ -1,16 +1,16 @@
 #' Importer les données d'occurrence des criquets pèlerins
 #'
-#' Importe les données de criquets pèlerins depuis trois sources :
-#' un fichier CSV local, GBIF directement via rgbif,
-#' ou FAO Locust Hub. Nettoie et convertit en objet spatial.
+#' Importe les données de criquets pèlerins depuis quatre sources :
+#' un fichier CSV local, GBIF via rgbif, FAO Locust Hub,
+#' ou iNaturalist via API REST.
 #'
 #' @param filepath Chemin vers le fichier CSV. Par défaut NULL
 #' @param source Source des données : "csv", "gbif", "fao".
-#'   Par défaut "csv"
+#'   Par défaut "csv". Si "fao" → essaie FAO puis iNaturalist puis GBIF
 #' @param lat_col Nom colonne latitude. Par défaut "latitude"
 #' @param lon_col Nom colonne longitude. Par défaut "longitude"
 #' @param date_col Nom colonne date. Par défaut "date"
-#' @param limit Nombre max d'occurrences GBIF. Par défaut 500
+#' @param limit Nombre max d'occurrences. Par défaut 500
 #'
 #' @return Un data.frame nettoyé avec les colonnes :
 #'   \item{latitude}{Latitude de l'observation}
@@ -26,7 +26,7 @@
 #' # Depuis GBIF directement
 #' df <- import_locust_data(source = "gbif", limit = 200)
 #'
-#' # Depuis FAO Locust Hub
+#' # Depuis FAO (fallback iNaturalist si indisponible)
 #' df <- import_locust_data(source = "fao")
 #'
 #' head(df)
@@ -73,14 +73,14 @@ import_locust_data <- function(filepath = NULL,
       message("GBIF : ", nrow(df), " occurrences téléchargées")
 
     }, error = function(e) {
-      stop("Erreur GBIF : ", e$message,
-           "\nVérifiez votre connexion internet")
+      stop("Erreur GBIF : ", e$message)
     })
 
-    # ── Source FAO Locust Hub ─────────────────────────────────
+    # ── Source FAO → iNaturalist → GBIF ──────────────────────
   } else if (source == "fao") {
 
     message("Téléchargement depuis FAO/iNaturalist...")
+    df <- NULL
 
     # ── Essai 1 : FAO Locust Hub ───────────────────────────
     fao_urls <- c(
@@ -90,9 +90,8 @@ import_locust_data <- function(filepath = NULL,
              "f30cf8d14dab4c87a1af76ec99a56200_0.geojson")
     )
 
-    fao_ok <- FALSE
-
     for (fao_url in fao_urls) {
+      if (!is.null(df)) break
       tryCatch({
         if (!requireNamespace("sf", quietly = TRUE)) {
           install.packages("sf")
@@ -109,34 +108,30 @@ import_locust_data <- function(filepath = NULL,
           presence  = 1
         )
         message("FAO : ", nrow(df), " occurrences téléchargées")
-        fao_ok <- TRUE
-        break
       }, error = function(e) {
         message("URL FAO indisponible : ", e$message)
       })
     }
 
-    # ── Essai 2 : iNaturalist si FAO échoue ───────────────
-    if (!fao_ok) {
+    # ── Essai 2 : iNaturalist ─────────────────────────────
+    if (is.null(df)) {
       message("FAO indisponible — utilisation iNaturalist...")
-
-      if (!requireNamespace("jsonlite", quietly = TRUE)) {
-        install.packages("jsonlite")
-      }
-
       tryCatch({
+        if (!requireNamespace("jsonlite", quietly = TRUE)) {
+          install.packages("jsonlite")
+        }
+
         url_inat <- paste0(
           "https://api.inaturalist.org/v1/observations?",
           "taxon_name=Schistocerca+gregaria&",
           "has_geo=true&",
-          "per_page=", limit, "&",
+          "per_page=", min(limit, 200), "&",
           "order=desc&order_by=created_at"
         )
 
         data_inat <- jsonlite::fromJSON(url_inat)
         obs       <- data_inat$results
 
-        # Extraire coordonnées
         lats <- sapply(obs$geojson$coordinates,
                        function(x) if (length(x) >= 2) x[2] else NA)
         lons <- sapply(obs$geojson$coordinates,
@@ -155,15 +150,14 @@ import_locust_data <- function(filepath = NULL,
 
         message("iNaturalist : ", nrow(df),
                 " occurrences téléchargées")
-        fao_ok <- TRUE
 
       }, error = function(e) {
         message("iNaturalist erreur : ", e$message)
       })
     }
 
-    # ── Essai 3 : GBIF si tout échoue ─────────────────────
-    if (!fao_ok) {
+    # ── Essai 3 : GBIF fallback ───────────────────────────
+    if (is.null(df)) {
       message("Utilisation GBIF comme dernier recours...")
 
       if (!requireNamespace("rgbif", quietly = TRUE)) {
@@ -183,75 +177,8 @@ import_locust_data <- function(filepath = NULL,
         date      = as.Date(substr(df_raw$eventDate, 1, 10)),
         presence  = 1
       )
-
-      message("GBIF : ", nrow(df), " occurrences chargées")
-    }
-
-    message("Téléchargement depuis FAO Locust Hub...")
-
-    # URLs FAO à essayer
-    fao_urls <- c(
-      paste0("https://locust-hub-hqfao.hub.arcgis.com/",
-             "datasets/FAO::locust-presence-data.geojson"),
-      paste0("https://opendata.arcgis.com/datasets/",
-             "f30cf8d14dab4c87a1af76ec99a56200_0.geojson")
-    )
-
-    fao_ok <- FALSE
-
-    for (fao_url in fao_urls) {
-      tryCatch({
-        if (!requireNamespace("sf", quietly = TRUE)) {
-          install.packages("sf")
-        }
-
-        message("Essai URL : ", fao_url)
-        fao_data <- sf::st_read(fao_url, quiet = TRUE)
-        coords   <- sf::st_coordinates(fao_data)
-
-        df <- data.frame(
-          latitude  = coords[, 2],
-          longitude = coords[, 1],
-          date      = as.Date(
-            substr(as.character(fao_data$STARTDATE), 1, 10)
-          ),
-          presence  = 1
-        )
-
-        message("FAO : ", nrow(df), " occurrences téléchargées")
-        fao_ok <- TRUE
-        break
-
-      }, error = function(e) {
-        message("URL FAO indisponible : ", e$message)
-      })
-    }
-
-    # ── Fallback GBIF si FAO indisponible ─────────────────────
-    if (!fao_ok) {
-      message("FAO indisponible — utilisation GBIF comme fallback...")
-
-      if (!requireNamespace("rgbif", quietly = TRUE)) {
-        install.packages("rgbif")
-      }
-
-      gbif_data <- rgbif::occ_search(
-        scientificName = "Schistocerca gregaria",
-        hasCoordinate  = TRUE,
-        limit          = limit
-      )
-
-      df_raw <- gbif_data$data
-
-      df <- data.frame(
-        latitude  = df_raw$decimalLatitude,
-        longitude = df_raw$decimalLongitude,
-        date      = as.Date(substr(df_raw$eventDate, 1, 10)),
-        presence  = 1
-      )
-
-      message("GBIF (fallback FAO) : ",
-              nrow(df), " occurrences chargées")
+      message("GBIF (fallback) : ", nrow(df),
+              " occurrences chargées")
     }
 
     # ── Source CSV local ──────────────────────────────────────
@@ -269,7 +196,6 @@ import_locust_data <- function(filepath = NULL,
 
     df_raw <- read.csv(filepath, stringsAsFactors = FALSE)
 
-    # Vérifier colonnes
     cols_requises   <- c(lat_col, lon_col, date_col)
     cols_manquantes <- cols_requises[
       !cols_requises %in% names(df_raw)]
@@ -286,7 +212,6 @@ import_locust_data <- function(filepath = NULL,
   }
 
   # ── Nettoyage commun ──────────────────────────────────────
-  # Supprimer NA
   n_avant <- nrow(df)
   df <- df[!is.na(df$latitude) &
              !is.na(df$longitude) &
@@ -297,7 +222,6 @@ import_locust_data <- function(filepath = NULL,
             " ligne(s) supprimée(s) : valeurs manquantes")
   }
 
-  # Supprimer doublons
   n_avant <- nrow(df)
   df <- unique(df)
 
