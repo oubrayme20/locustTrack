@@ -51,3 +51,5 @@ cat("✓ Package locustTrack chargé avec succès\n")
 cat("✓ Fonctions disponibles :\n")
 print(ls("package:locustTrack"))
 
+#TEST
+devtools::test()

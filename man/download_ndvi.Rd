@@ -2,7 +2,7 @@
 % Please edit documentation in R/download_ndvi.R
 \name{download_ndvi}
 \alias{download_ndvi}
-\title{Télécharger ou simuler les données NDVI MODIS}
+\title{Télécharger les données NDVI MODIS}
 \usage{
 download_ndvi(
   annee = 2023,
@@ -12,35 +12,39 @@ download_ndvi(
   lat_min = -10,
   lat_max = 40,
   resolution = 0.5,
-  simuler = TRUE
+  simuler = FALSE
 )
 }
 \arguments{
-\item{annee}{Année d'analyse (ex: 2023). Par défaut 2023}
+\item{annee}{Année d'analyse. Par défaut 2023}
 
 \item{mois}{Mois d'analyse (1-12). Par défaut 1}
 
-\item{lon_min}{Longitude minimale de la zone. Par défaut -20}
+\item{lon_min}{Longitude minimale. Par défaut -20}
 
-\item{lon_max}{Longitude maximale de la zone. Par défaut 65}
+\item{lon_max}{Longitude maximale. Par défaut 65}
 
-\item{lat_min}{Latitude minimale de la zone. Par défaut -10}
+\item{lat_min}{Latitude minimale. Par défaut -10}
 
-\item{lat_max}{Latitude maximale de la zone. Par défaut 40}
+\item{lat_max}{Latitude maximale. Par défaut 40}
 
-\item{resolution}{Résolution de la grille en degrés. Par défaut 0.5}
+\item{resolution}{Résolution en degrés. Par défaut 0.5}
 
-\item{simuler}{Si TRUE, génère des données simulées. Par défaut TRUE}
+\item{simuler}{Si TRUE, génère données simulées. Par défaut FALSE}
 }
 \value{
-Un objet SpatRaster (terra) avec les valeurs NDVI
+Un objet SpatRaster avec les valeurs NDVI
 }
 \description{
-Télécharge les données NDVI MODIS pour une période donnée ou génère
-des données NDVI simulées pour la zone d'étude des criquets pèlerins.
+Télécharge les données NDVI MODIS via le package MODISTools
+pour une période donnée ou génère des données simulées
+si MODISTools n'est pas disponible.
 }
 \examples{
 \dontrun{
+# Données réelles MODIS
+ndvi <- download_ndvi(annee = 2023, mois = 6, simuler = FALSE)
+
 # Données simulées
 ndvi <- download_ndvi(annee = 2023, mois = 6, simuler = TRUE)
 terra::plot(ndvi, main = "NDVI - Juin 2023")
