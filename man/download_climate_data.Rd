@@ -2,7 +2,7 @@
 % Please edit documentation in R/download_climate_data.R
 \name{download_climate_data}
 \alias{download_climate_data}
-\title{Télécharger les données climatiques WorldClim}
+\title{Télécharger les données climatiques WorldClim et CHIRPS}
 \usage{
 download_climate_data(
   var = "prec",
@@ -11,34 +11,50 @@ download_climate_data(
   lon_max = 65,
   lat_min = -10,
   lat_max = 40,
-  path = "data/climate"
+  path = "data/climate",
+  chirps = FALSE,
+  humidite = FALSE
 )
 }
 \arguments{
-\item{var}{Variable climatique : "tmax", "tmin", "tavg", "prec". Par défaut "prec"}
+\item{var}{Variable climatique : "tmax","tmin","tavg","prec","bio".
+Par défaut "prec"}
 
 \item{res}{Résolution en minutes : 10, 5, 2.5. Par défaut 10}
 
-\item{lon_min}{Longitude minimale de la zone. Par défaut -20}
+\item{lon_min}{Longitude minimale. Par défaut -20}
 
-\item{lon_max}{Longitude maximale de la zone. Par défaut 65}
+\item{lon_max}{Longitude maximale. Par défaut 65}
 
-\item{lat_min}{Latitude minimale de la zone. Par défaut -10}
+\item{lat_min}{Latitude minimale. Par défaut -10}
 
-\item{lat_max}{Latitude maximale de la zone. Par défaut 40}
+\item{lat_max}{Latitude maximale. Par défaut 40}
 
 \item{path}{Dossier de téléchargement. Par défaut "data/climate"}
+
+\item{chirps}{Si TRUE, télécharge aussi CHIRPS. Par défaut FALSE}
+
+\item{humidite}{Si TRUE, ajoute humidité relative. Par défaut FALSE}
 }
 \value{
-Un objet SpatRaster (terra) avec les données climatiques
+Un objet SpatRaster avec les données climatiques
 }
 \description{
-Télécharge les variables climatiques (température et précipitations)
-depuis WorldClim et les découpe sur la zone d'étude des criquets.
+Télécharge les variables climatiques depuis WorldClim
+(température, précipitations, humidité) et optionnellement
+les précipitations CHIRPS pour la zone d'étude des criquets.
 }
 \examples{
 \dontrun{
+# Précipitations WorldClim seulement
 clim <- download_climate_data(var = "prec", res = 10)
+
+# Avec humidité
+clim <- download_climate_data(var = "prec", humidite = TRUE)
+
+# Avec CHIRPS
+clim <- download_climate_data(var = "prec", chirps = TRUE)
+
 terra::plot(clim[[1]])
 }
 

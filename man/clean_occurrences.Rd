@@ -4,7 +4,14 @@
 \alias{clean_occurrences}
 \title{Nettoyer les occurrences spatiales des criquets pèlerins}
 \usage{
-clean_occurrences(df, lon_min = -20, lon_max = 65, lat_min = -10, lat_max = 40)
+clean_occurrences(
+  df,
+  lon_min = -20,
+  lon_max = 65,
+  lat_min = -10,
+  lat_max = 40,
+  seuil_outlier = 3
+)
 }
 \arguments{
 \item{df}{data.frame issu de \code{import_locust_data()}}
@@ -16,6 +23,9 @@ clean_occurrences(df, lon_min = -20, lon_max = 65, lat_min = -10, lat_max = 40)
 \item{lat_min}{Latitude minimale de la zone. Par défaut -10}
 
 \item{lat_max}{Latitude maximale de la zone. Par défaut 40}
+
+\item{seuil_outlier}{Seuil Z-score pour détection outliers.
+Par défaut 3}
 }
 \value{
 Un data.frame avec les occurrences nettoyées
@@ -23,11 +33,11 @@ Un data.frame avec les occurrences nettoyées
 \description{
 Supprime les coordonnées invalides, les points marins,
 les points en dehors de la zone Afrique/Maghreb/Moyen-Orient,
-et les doublons spatiaux.
+les doublons spatiaux et détecte les outliers simples.
 }
 \examples{
 \dontrun{
-df_raw <- import_locust_data("occurrences.csv")
+df_raw   <- import_locust_data("occurrences.csv")
 df_clean <- clean_occurrences(df_raw)
 nrow(df_clean)
 }
