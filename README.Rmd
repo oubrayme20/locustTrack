@@ -55,7 +55,7 @@ devtools::install()
 | `predict_risk_map()` | Carte risque faible/moyen/élevé | terra::predict |
 | `summarize_risk_regions()` | Stats par région + surface km² | Raster risque |
 | `plot_risk_map()` | Cartes NDVI + greenup + risque + hotspots | — |
-| `plot_temporal()` | Graphiques temporels NDVI mensuel | NDVI multi-dates |
+| `plot_temporal()` | Graphiques temporels NDVI + précipitations | NDVI multi-dates |
 | `generate_alert_bulletin()` | Bulletin alerte mensuel HTML/PDF | Tous outputs |
 | `generate_report()` | Rapport complet HTML/PDF + cartes | Tous outputs |
 
@@ -67,7 +67,6 @@ devtools::install()
 library(locustTrack)
 
 # ── 1. Importer les données ──────────────────────────────────
-
 # Depuis GBIF directement
 df <- import_locust_data(source = "gbif", limit = 200)
 
@@ -81,7 +80,6 @@ df <- import_locust_data("occurrences.csv", source = "csv")
 df_clean <- clean_occurrences(df, seuil_outlier = 3)
 
 # ── 3. Télécharger les données climatiques ───────────────────
-
 # WorldClim seul
 clim <- download_climate_data(var = "prec", res = 10)
 
@@ -92,7 +90,6 @@ clim <- download_climate_data(var = "prec", humidite = TRUE)
 clim <- download_climate_data(var = "prec", chirps = TRUE)
 
 # ── 4. Télécharger le NDVI MODIS ────────────────────────────
-
 # Un seul mois
 ndvi <- download_ndvi(annee = 2023, mois = 6)
 
@@ -101,7 +98,6 @@ ndvi_multi <- download_ndvi(annee = 2023,
                              mois  = c(1, 4, 7, 10))
 
 # ── 5. Calculer le greenup ───────────────────────────────────
-
 # Sans précipitations
 greenup <- calculate_greenup(ndvi_jan, ndvi_jul)
 
@@ -136,7 +132,6 @@ risk <- predict_risk_map(rf, clim, ndvi,
 # ── 11. Résumer les régions ──────────────────────────────────
 summary <- summarize_risk_regions(risk,
                                    seuil_hotspot = 0.7)
-# Affiche surface en km² par région
 print(summary$resume)
 print(summary$stats_pays)
 
@@ -232,21 +227,27 @@ locustTrack/
 │   ├── plot_risk_map.R               ← cartographie
 │   ├── plot_temporal.R               ← graphiques temporels
 │   ├── generate_alert_bulletin.R     ← bulletin HTML/PDF
-│   └── generate_report.R             ← rapport HTML/PDF
+│   ├── generate_report.R             ← rapport HTML/PDF
+│   └── locust_sample_doc.R           ← documentation données
 ├── data/
-│   └── locust_sample.rda             ← données GBIF exemple
+│   └── locust_sample.rda             ← données GBIF réelles
 ├── data-raw/
 │   ├── locust_sample.R               ← script génération données
 │   ├── document_package.R            ← script documentation
 │   └── github_push.R                 ← commandes GitHub
-├── man/                              ← documentation auto
-├── tests/testthat/                   ← tests unitaires
+├── man/                              ← documentation auto-générée
+├── tests/testthat/                   ← 9 fichiers de tests
 │   ├── test-import_locust_data.R
 │   ├── test-clean_occurrences.R
 │   ├── test-download_ndvi.R
 │   ├── test-calculate_greenup.R
+│   ├── test-evaluate_model.R
+│   ├── test-generate_background_points.R
+│   ├── test-plot_temporal.R
+│   ├── test-prepare_predictors.R
 │   └── test-train_rf_model.R
-├── vignettes/                        ← tutoriel
+├── vignettes/
+│   └── introduction-locusttrack.Rmd  ← tutoriel reproductible
 ├── DESCRIPTION
 ├── NAMESPACE
 └── README.md
@@ -258,13 +259,17 @@ locustTrack/
 
 ```r
 devtools::test()
-# ✔ | F W S OK | Context
-# ✔ |        5 | download_ndvi
-# ✔ |        4 | calculate_greenup
-# ✔ |        4 | train_rf_model
-# ✔ |        5 | clean_occurrences
-# ✔ |        7 | import_locust_data
-# [ FAIL 0 | WARN 0 | SKIP 0 | PASS 25 ]
+# ✔ | F W S  OK | Context
+# ✔ |         9 | calculate_greenup
+# ✔ |         5 | clean_occurrences
+# ✔ |         6 | download_ndvi
+# ✔ |        13 | evaluate_model
+# ✔ |         5 | generate_background_points
+# ✔ |         7 | import_locust_data
+# ✔ |         8 | plot_temporal
+# ✔ |         4 | prepare_predictors
+# ✔ |         9 | train_rf_model
+# [ FAIL 0 | WARN 0 | SKIP 0 | PASS 66 ]
 ```
 
 ---
@@ -278,7 +283,7 @@ Institut Agronomique et Vétérinaire Hassan II
 
 ## Licence
 
-MIT 
+MIT
 
 ---
 
