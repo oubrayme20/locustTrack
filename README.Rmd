@@ -43,7 +43,7 @@ devtools::install()
 
 | Fonction | Description | Source données |
 |---|---|---|
-| `import_locust_data()` | Importer occurrences CSV/GBIF/FAO | GBIF, FAO, CSV |
+| `import_locust_data()` | Importer occurrences CSV/GBIF/FAO/iNaturalist | GBIF, FAO, iNaturalist, CSV |
 | `clean_occurrences()` | Nettoyer coordonnées + outliers Z-score | — |
 | `download_climate_data()` | Télécharger climat + CHIRPS + humidité | WorldClim, CHIRPS |
 | `download_ndvi()` | Télécharger NDVI MODIS multi-dates | MODIS MOD13A3 |
@@ -188,7 +188,8 @@ head(locust_sample)
 | Type | Source | Accès |
 |---|---|---|
 | Occurrences | GBIF | `rgbif::occ_search()` |
-| Occurrences | FAO Locust Hub | API GeoJSON |
+| Occurrences | FAO Locust Hub | API GeoJSON (fallback iNaturalist) |
+| Occurrences | iNaturalist | API REST (1876 observations) |
 | Climat | WorldClim | `geodata::worldclim_global()` |
 | Précipitations | CHIRPS | Package `chirps` |
 | NDVI | MODIS MOD13A3 | `MODISTools::mt_subset()` |
