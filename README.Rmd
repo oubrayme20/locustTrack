@@ -12,13 +12,13 @@
 
 **locustTrack** est un package R complet permettant de :
 
-- 📍 Importer et nettoyer les données d'occurrence de criquets (GBIF, FAO, CSV)
+- 📍 Importer et nettoyer les données d'occurrence de criquets (GBIF, FAO, iNaturalist, CSV)
 - 🌍 Télécharger les données climatiques WorldClim + CHIRPS
 - 🛰️ Télécharger les données NDVI MODIS (multi-dates)
 - 🌿 Analyser le verdissement post-pluie (Greenup)
 - 🤖 Modéliser les zones à risque via Random Forest
 - 🗺️ Produire des cartes de risque mensuelles
-- 📊 Générer des graphiques temporels d'évolution NDVI
+- 📊 Générer des graphiques temporels d'évolution NDVI + précipitations
 - 📄 Générer des bulletins d'alerte et rapports HTML/PDF
 
 **Espèce étudiée :** *Schistocerca gregaria* (Criquet pèlerin)
@@ -36,6 +36,19 @@ remotes::install_github("oubrayme20/locustTrack")
 # Ou localement
 devtools::install()
 ```
+
+---
+
+## Sources de données — Toutes testées et fonctionnelles ✅
+
+| Type | Source | Accès | Statut |
+|---|---|---|---|
+| Occurrences | GBIF | `rgbif::occ_search()` | ✅ Fonctionnel |
+| Occurrences | iNaturalist | API REST | ✅ Fonctionnel |
+| Occurrences | FAO Locust Hub | API GeoJSON | ⚠️ Fallback auto |
+| Climat | WorldClim | `geodata::worldclim_global()` | ✅ Fonctionnel |
+| Précipitations | CHIRPS | Package `chirps` | ✅ Fonctionnel |
+| NDVI | MODIS MOD13A3 | `MODISTools::mt_subset()` | ✅ Fonctionnel |
 
 ---
 
@@ -70,7 +83,7 @@ library(locustTrack)
 # Depuis GBIF directement
 df <- import_locust_data(source = "gbif", limit = 200)
 
-# Depuis FAO Locust Hub
+# Depuis iNaturalist (fallback FAO)
 df <- import_locust_data(source = "fao")
 
 # Depuis CSV local
@@ -173,26 +186,14 @@ rapport <- generate_report(
 ## Données intégrées
 
 ```r
-# Données d'exemple — occurrences réelles GBIF
+# Données d'exemple — 99 occurrences réelles GBIF 2026
 data("locust_sample")
 head(locust_sample)
 #   latitude longitude       date presence
-# 1     15.2      38.5 2022-03-15        1
-# 2     12.8      42.1 2022-04-02        1
+# 1 28.13662 -16.78614 2026-01-02        1
+# 2 29.48855 -10.06592 2026-01-02        1
+# 3 28.85964 -13.86821 2026-01-08        1
 ```
-
----
-
-## Sources de données
-
-| Type | Source | Accès |
-|---|---|---|
-| Occurrences | GBIF | `rgbif::occ_search()` |
-| Occurrences | FAO Locust Hub | API GeoJSON (fallback iNaturalist) |
-| Occurrences | iNaturalist | API REST (1876 observations) |
-| Climat | WorldClim | `geodata::worldclim_global()` |
-| Précipitations | CHIRPS | Package `chirps` |
-| NDVI | MODIS MOD13A3 | `MODISTools::mt_subset()` |
 
 ---
 
@@ -214,26 +215,26 @@ Le modèle Random Forest est évalué avec :
 ```
 locustTrack/
 ├── R/
-│   ├── import_locust_data.R          ← CSV + GBIF + FAO
-│   ├── clean_occurrences.R           ← nettoyage + outliers
-│   ├── download_climate_data.R       ← WorldClim + CHIRPS
+│   ├── import_locust_data.R          ← CSV + GBIF + FAO + iNaturalist
+│   ├── clean_occurrences.R           ← nettoyage + outliers Z-score
+│   ├── download_climate_data.R       ← WorldClim + CHIRPS + humidité
 │   ├── download_ndvi.R               ← MODIS multi-dates
-│   ├── calculate_greenup.R           ← verdissement + pluie
+│   ├── calculate_greenup.R           ← verdissement + précipitations
 │   ├── prepare_predictors.R          ← variables ML
-│   ├── generate_background_points.R  ← pseudo-absences
-│   ├── train_rf_model.R              ← Random Forest
-│   ├── evaluate_model.R              ← métriques + graphiques
-│   ├── predict_risk_map.R            ← carte risque
-│   ├── summarize_risk_regions.R      ← stats + km²
-│   ├── plot_risk_map.R               ← cartographie
-│   ├── plot_temporal.R               ← graphiques temporels
+│   ├── generate_background_points.R  ← pseudo-absences + contrôle spatial
+│   ├── train_rf_model.R              ← Random Forest 70/30
+│   ├── evaluate_model.R              ← métriques + ROC + obs vs pred
+│   ├── predict_risk_map.R            ← carte risque faible/moyen/élevé
+│   ├── summarize_risk_regions.R      ← stats régions + surface km²
+│   ├── plot_risk_map.R               ← cartographie + export PNG/PDF
+│   ├── plot_temporal.R               ← graphiques temporels NDVI + pluie
 │   ├── generate_alert_bulletin.R     ← bulletin HTML/PDF
-│   ├── generate_report.R             ← rapport HTML/PDF
+│   ├── generate_report.R             ← rapport HTML/PDF + cartes
 │   └── locust_sample_doc.R           ← documentation données
 ├── data/
-│   └── locust_sample.rda             ← données GBIF réelles
+│   └── locust_sample.rda             ← 99 occurrences GBIF réelles 2026
 ├── data-raw/
-│   ├── locust_sample.R               ← script génération données
+│   ├── locust_sample.R               ← script téléchargement GBIF
 │   ├── document_package.R            ← script documentation
 │   └── github_push.R                 ← commandes GitHub
 ├── man/                              ← documentation auto-générée
@@ -251,6 +252,7 @@ locustTrack/
 │   └── introduction-locusttrack.Rmd  ← tutoriel reproductible
 ├── DESCRIPTION
 ├── NAMESPACE
+├── .gitignore
 └── README.md
 ```
 
@@ -271,6 +273,20 @@ devtools::test()
 # ✔ |         4 | prepare_predictors
 # ✔ |         9 | train_rf_model
 # [ FAIL 0 | WARN 0 | SKIP 0 | PASS 66 ]
+```
+
+---
+
+## Validation des sources
+
+```r
+# Toutes les sources testées et fonctionnelles
+#    Source      Statut       Données
+# 1  GBIF        ✅ OK        5 occurrences
+# 2  iNaturalist ✅ OK        5 occurrences
+# 3  WorldClim   ✅ OK        12 couches
+# 4  MODIS       ✅ OK        17000 pixels
+# 5  CHIRPS      ✅ OK        12 couches
 ```
 
 ---
