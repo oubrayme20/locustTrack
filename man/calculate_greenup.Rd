@@ -26,10 +26,10 @@ Par défaut NULL}
 }
 \value{
 Une liste contenant :
-  \item{anomalie}{Raster anomalie NDVI (après - avant)}
-  \item{greenup}{Raster binaire zones de verdissement}
-  \item{greenup_pluie}{Raster greenup conditionné aux précipitations}
-  \item{stats}{Statistiques résumées du greenup}
+\item{anomalie}{Raster anomalie NDVI (après - avant)}
+\item{greenup}{Raster binaire zones de verdissement}
+\item{greenup_pluie}{Raster greenup conditionné aux précipitations}
+\item{stats}{Statistiques résumées du greenup}
 }
 \description{
 Analyse le verdissement de la végétation après les précipitations.

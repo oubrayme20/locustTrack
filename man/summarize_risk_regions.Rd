@@ -13,10 +13,10 @@ summarize_risk_regions(risk_result, seuil_hotspot = 0.7)
 }
 \value{
 Une liste contenant :
-  \item{stats_globales}{Statistiques globales de risque}
-  \item{stats_pays}{Statistiques par région avec surface km²}
-  \item{hotspots}{Coordonnées des zones hotspot}
-  \item{resume}{Résumé par niveau de risque avec km²}
+\item{stats_globales}{Statistiques globales de risque}
+\item{stats_pays}{Statistiques par région avec surface km²}
+\item{hotspots}{Coordonnées des zones hotspot}
+\item{resume}{Résumé par niveau de risque avec km²}
 }
 \description{
 Calcule des statistiques globales et par région géographique

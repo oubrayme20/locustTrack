@@ -34,7 +34,7 @@ generate_background_points(
 }
 \value{
 Un data.frame combinant occurrences (presence=1)
-  et background points (presence=0)
+et background points (presence=0)
 }
 \description{
 Génère des points background par échantillonnage spatial depuis

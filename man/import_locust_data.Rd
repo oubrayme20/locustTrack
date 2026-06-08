@@ -29,10 +29,10 @@ Par défaut "csv"}
 }
 \value{
 Un data.frame nettoyé avec les colonnes :
-  \item{latitude}{Latitude de l'observation}
-  \item{longitude}{Longitude de l'observation}
-  \item{date}{Date de l'observation}
-  \item{presence}{Présence du criquet (1)}
+\item{latitude}{Latitude de l'observation}
+\item{longitude}{Longitude de l'observation}
+\item{date}{Date de l'observation}
+\item{presence}{Présence du criquet (1)}
 }
 \description{
 Importe les données de criquets pèlerins depuis trois sources :

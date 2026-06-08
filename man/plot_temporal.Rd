@@ -41,7 +41,7 @@ précipitations. Par défaut NULL}
 }
 \value{
 Un data.frame avec les valeurs NDVI et
-  précipitations moyennes par mois
+précipitations moyennes par mois
 }
 \description{
 Génère des graphiques temporels montrant l'évolution mensuelle

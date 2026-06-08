@@ -19,11 +19,11 @@ train_rf_model(dataset, prop_train = 0.7, ntree = 500, mtry = NULL, seed = 42)
 }
 \value{
 Une liste contenant :
-  \item{modele}{Le modèle Random Forest entraîné}
-  \item{train}{Données d'entraînement}
-  \item{test}{Données de test}
-  \item{importance}{data.frame importance des variables}
-  \item{params}{Paramètres utilisés}
+\item{modele}{Le modèle Random Forest entraîné}
+\item{train}{Données d'entraînement}
+\item{test}{Données de test}
+\item{importance}{data.frame importance des variables}
+\item{params}{Paramètres utilisés}
 }
 \description{
 Entraîne un modèle Random Forest (présence/absence) sur le dataset

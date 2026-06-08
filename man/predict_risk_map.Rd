@@ -28,9 +28,9 @@ predict_risk_map(
 }
 \value{
 Une liste contenant :
-  \item{risque_continu}{Raster probabilité de présence (0-1)}
-  \item{risque_classe}{Raster classé 1=faible 2=moyen 3=élevé}
-  \item{stats}{Statistiques de la carte de risque}
+\item{risque_continu}{Raster probabilité de présence (0-1)}
+\item{risque_classe}{Raster classé 1=faible 2=moyen 3=élevé}
+\item{stats}{Statistiques de la carte de risque}
 }
 \description{
 Applique le modèle Random Forest directement sur le raster

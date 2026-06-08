@@ -15,10 +15,10 @@ evaluate_model(rf_result, export = FALSE, dossier = "outputs")
 }
 \value{
 Une liste contenant :
-  \item{metriques}{data.frame des métriques de performance}
-  \item{matrice_confusion}{Matrice de confusion}
-  \item{auc}{Valeur AUC}
-  \item{predictions}{data.frame obs vs pred}
+\item{metriques}{data.frame des métriques de performance}
+\item{matrice_confusion}{Matrice de confusion}
+\item{auc}{Valeur AUC}
+\item{predictions}{data.frame obs vs pred}
 }
 \description{
 Calcule les métriques de performance du modèle sur le jeu de test :

@@ -35,7 +35,7 @@ Par défaut 1}
 }
 \value{
 Un objet SpatRaster avec les valeurs NDVI
-  (une couche par mois si multi-dates)
+(une couche par mois si multi-dates)
 }
 \description{
 Télécharge les données NDVI MODIS via le package MODISTools

@@ -23,12 +23,12 @@ Par défaut 0.9}
 }
 \value{
 Un data.frame avec les colonnes :
-  \item{latitude}{Latitude du point}
-  \item{longitude}{Longitude du point}
-  \item{presence}{1 = présence, 0 = absence}
-  \item{clim_XX}{Variables pluie et température extraites}
-  \item{ndvi}{Indice de végétation NDVI}
-  \item{greenup}{Anomalie végétation (si fourni)}
+\item{latitude}{Latitude du point}
+\item{longitude}{Longitude du point}
+\item{presence}{1 = présence, 0 = absence}
+\item{clim_XX}{Variables pluie et température extraites}
+\item{ndvi}{Indice de végétation NDVI}
+\item{greenup}{Anomalie végétation (si fourni)}
 }
 \description{
 Extrait les valeurs climatiques (température, précipitations/pluie)
@@ -38,10 +38,10 @@ trop corrélées et génère un dataset prêt pour Random Forest.
 \details{
 Variables extraites conformément au guide :
 \itemize{
-  \item \strong{pluie} — précipitations via raster climatique
-  \item \strong{température} — via raster climatique
-  \item \strong{NDVI} — indice de végétation
-  \item \strong{anomalie végétation} — via raster greenup
+\item \strong{pluie} — précipitations via raster climatique
+\item \strong{température} — via raster climatique
+\item \strong{NDVI} — indice de végétation
+\item \strong{anomalie végétation} — via raster greenup
 }
 }
 \examples{

@@ -1,19 +1,36 @@
 Package: locustTrack
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Prediction of Desert Locust Invasion Risk
 Version: 0.1.0
-Authors@R: c(
-    person(
-      "Jane", "Doe",
-      email = "jane@example.com",
-      role = c("aut", "cre")
-    )
+Authors@R: person(
+    "Salma", "Oubrayme",
+    email = "salma.oubrayme@iav.ac.ma",
+    role  = c("aut", "cre")
   )
-Description: More about what it does (maybe more than one line).
-    Continuation lines should be indented.
-License: What license is it under?
+Description: Un package R pour analyser les conditions favorables aux
+    criquets pelerins (Schistocerca gregaria), modeliser les zones a
+    risque d'invasion, suivre la vegetation apres les pluies, et
+    produire des cartes de risque mensuelles et bulletins d'alerte.
+License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
-Depends: 
-    R (>= 3.5)
+Depends:
+    R (>= 4.0.0)
+Imports:
+    sf,
+    terra,
+    randomForest,
+    geodata,
+    MODISTools,
+    rgbif,
+    base64enc
+Suggests:
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown,
+    chirps,
+    pagedown
+VignetteBuilder: knitr
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
 Config/roxygen2/version: 8.0.0
