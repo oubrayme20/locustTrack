@@ -11,7 +11,7 @@ Description: Un package R pour analyser les conditions favorables aux
     criquets pelerins (Schistocerca gregaria), modeliser les zones a
     risque d'invasion, suivre la vegetation apres les pluies, et
     produire des cartes de risque mensuelles et bulletins d'alerte.
-License: MIT + file LICENSE
+License: MIT 
 Encoding: UTF-8
 LazyData: true
 Depends:
