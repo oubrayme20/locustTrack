@@ -1,0 +1,5 @@
+"# Rapport de test - locustTrack" 
+"Date: 08/06/2026" 
+"Tests: FAIL 0 | WARN 0 | SKIP 0 | PASS 66" 
+"Fonctions test‚es: 9/15" 
+"Status: OK" 
