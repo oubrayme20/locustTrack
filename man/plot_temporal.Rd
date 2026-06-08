@@ -12,6 +12,7 @@ plot_temporal(
   lon_max = 65,
   lat_min = -10,
   lat_max = 40,
+  climat = NULL,
   export = FALSE,
   dossier = "outputs"
 )
@@ -31,28 +32,34 @@ plot_temporal(
 
 \item{lat_max}{Latitude maximale. Par défaut 40}
 
+\item{climat}{SpatRaster climatique optionnel pour les
+précipitations. Par défaut NULL}
+
 \item{export}{Si TRUE, exporte en PNG. Par défaut FALSE}
 
 \item{dossier}{Dossier de sortie. Par défaut "outputs"}
 }
 \value{
-Un data.frame avec les valeurs NDVI moyennes par mois
+Un data.frame avec les valeurs NDVI et
+  précipitations moyennes par mois
 }
 \description{
-Génère des graphiques temporels montrant l'évolution du NDVI
-et des précipitations sur plusieurs mois/années.
+Génère des graphiques temporels montrant l'évolution mensuelle
+du NDVI et des précipitations sur la zone d'étude.
 Permet de visualiser les conditions favorables aux criquets.
 }
 \examples{
 \dontrun{
-# Graphique temporel annuel
+# NDVI seul
 temporal <- plot_temporal(annee = 2023,
                           mois_debut = 1,
                           mois_fin   = 12)
-print(temporal)
 
-# Avec export PNG
-plot_temporal(annee = 2023, export = TRUE)
+# NDVI + précipitations
+clim <- download_climate_data(var = "prec")
+temporal <- plot_temporal(annee  = 2023,
+                          climat = clim,
+                          export = TRUE)
 }
 
 }

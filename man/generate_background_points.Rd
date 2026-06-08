@@ -4,7 +4,16 @@
 \alias{generate_background_points}
 \title{Générer des points de background (pseudo-absences)}
 \usage{
-generate_background_points(occurrences, raster_ref, n_points = NULL, seed = 42)
+generate_background_points(
+  occurrences,
+  raster_ref,
+  n_points = NULL,
+  lon_min = -20,
+  lon_max = 65,
+  lat_min = -10,
+  lat_max = 40,
+  seed = 42
+)
 }
 \arguments{
 \item{occurrences}{data.frame des occurrences (issu de clean_occurrences)}
@@ -12,6 +21,14 @@ generate_background_points(occurrences, raster_ref, n_points = NULL, seed = 42)
 \item{raster_ref}{SpatRaster de référence pour l'échantillonnage}
 
 \item{n_points}{Nombre de points background. Par défaut égal aux occurrences}
+
+\item{lon_min}{Longitude minimale zone étude. Par défaut -20}
+
+\item{lon_max}{Longitude maximale zone étude. Par défaut 65}
+
+\item{lat_min}{Latitude minimale zone étude. Par défaut -10}
+
+\item{lat_max}{Latitude maximale zone étude. Par défaut 40}
 
 \item{seed}{Graine aléatoire pour reproductibilité. Par défaut 42}
 }
@@ -22,12 +39,15 @@ Un data.frame combinant occurrences (presence=1)
 \description{
 Génère des points background par échantillonnage spatial depuis
 un raster de référence via spatSample() de terra.
+Inclut un contrôle spatial simple pour s'assurer que les points
+sont bien dans la zone d'étude et hors des zones de présence.
 }
 \examples{
 \dontrun{
-df_clean  <- clean_occurrences(import_locust_data("data.csv"))
-clim      <- download_climate_data(var = "prec")
-df_complet <- generate_background_points(df_clean, raster_ref = clim)
+df_clean   <- clean_occurrences(import_locust_data("data.csv"))
+clim       <- download_climate_data(var = "prec")
+df_complet <- generate_background_points(df_clean,
+                                          raster_ref = clim)
 table(df_complet$presence)
 }
 

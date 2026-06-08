@@ -53,3 +53,7 @@ print(ls("package:locustTrack"))
 
 #TEST
 devtools::test()
+
+#Cas d'Erreur
+remove.packages("locustTrack")
+.rs.restartR()
