@@ -1,0 +1,291 @@
+---
+title: "introduction-locusttrack"
+output: html_document
+---
+
+---
+title: "Introduction au package locustTrack"
+author: "Salma Oubrayme"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Introduction au package locustTrack}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment  = "#>",
+  eval     = FALSE
+)
+```
+
+## Introduction
+
+**locustTrack** est un package R de surveillance acridienne
+permettant de prédire les zones favorables aux criquets pèlerins
+(*Schistocerca gregaria*) et de modéliser les risques d'invasion.
+
+### Zones d'étude
+- Afrique subsaharienne
+- Maghreb
+- Moyen-Orient
+
+---
+
+## Installation
+
+```{r installation}
+# Depuis GitHub
+remotes::install_github("oubrayme20/locustTrack")
+
+# Charger le package
+library(locustTrack)
+```
+
+---
+
+## Étape 1 — Importer les données d'occurrence
+
+```{r import}
+# Depuis GBIF directement
+df <- import_locust_data(source = "gbif", limit = 200)
+
+# Depuis un CSV local
+df <- import_locust_data("occurrences.csv", source = "csv")
+
+# Données d'exemple intégrées
+data("locust_sample")
+head(locust_sample)
+```
+
+---
+
+## Étape 2 — Nettoyer les occurrences
+
+```{r clean}
+df_clean <- clean_occurrences(
+  locust_sample,
+  lon_min       = -20,
+  lon_max       =  65,
+  lat_min       = -10,
+  lat_max       =  40,
+  seuil_outlier =   3
+)
+```
+
+---
+
+## Étape 3 — Télécharger les données climatiques
+
+```{r climat}
+# Précipitations WorldClim
+clim_prec <- download_climate_data(var = "prec", res = 10)
+
+# Avec humidité optionnelle
+clim_hum <- download_climate_data(var      = "prec",
+                                   humidite = TRUE)
+
+# Avec CHIRPS optionnel
+clim_chirps <- download_climate_data(var    = "prec",
+                                      chirps = TRUE)
+```
+
+---
+
+## Étape 4 — Télécharger le NDVI MODIS
+
+```{r ndvi}
+# Un seul mois
+ndvi_juin <- download_ndvi(annee   = 2023,
+                            mois    = 6,
+                            simuler = TRUE)
+
+# Multi-dates : plusieurs mois
+ndvi_multi <- download_ndvi(annee   = 2023,
+                             mois    = c(1, 4, 7, 10),
+                             simuler = TRUE)
+terra::plot(ndvi_multi)
+```
+
+---
+
+## Étape 5 — Calculer le Greenup
+
+```{r greenup}
+ndvi_jan <- download_ndvi(2023, mois = 1, simuler = TRUE)
+ndvi_jul <- download_ndvi(2023, mois = 7, simuler = TRUE)
+
+# Greenup avec précipitations
+greenup <- calculate_greenup(
+  ndvi_avant     = ndvi_jan,
+  ndvi_apres     = ndvi_jul,
+  seuil_greenup  = 0.1,
+  seuil_pluie    = 10
+)
+
+terra::plot(greenup$anomalie, main = "Anomalie NDVI")
+terra::plot(greenup$greenup,  main = "Zones de verdissement")
+print(greenup$stats)
+```
+
+---
+
+## Étape 6 — Graphiques temporels
+
+```{r temporal}
+# NDVI mensuel
+temporal <- plot_temporal(
+  annee      = 2023,
+  mois_debut = 1,
+  mois_fin   = 12,
+  export     = FALSE
+)
+print(temporal)
+```
+
+---
+
+## Étape 7 — Préparer les variables
+
+```{r predictors}
+# Données background
+dataset_bg <- generate_background_points(
+  occurrences = df_clean,
+  raster_ref  = clim_prec,
+  n_points    = nrow(df_clean)
+)
+
+# Variables environnementales
+dataset <- prepare_predictors(
+  occurrences = dataset_bg,
+  climat      = clim_prec,
+  ndvi        = ndvi_juin,
+  greenup     = greenup$anomalie
+)
+head(dataset)
+```
+
+---
+
+## Étape 8 — Entraîner le modèle Random Forest
+
+```{r train}
+rf <- train_rf_model(
+  dataset    = dataset,
+  prop_train = 0.7,
+  ntree      = 500,
+  seed       = 42
+)
+print(rf$importance)
+```
+
+---
+
+## Étape 9 — Évaluer le modèle
+
+```{r evaluate}
+eval <- evaluate_model(rf, export = FALSE)
+print(eval$metriques)
+```
+
+---
+
+## Étape 10 — Carte de risque
+
+```{r risk}
+risk <- predict_risk_map(
+  rf_result   = rf,
+  climat      = clim_prec,
+  ndvi        = ndvi_juin,
+  seuil_moyen = 0.3,
+  seuil_eleve = 0.6
+)
+terra::plot(risk$risque_classe,
+            main = "Carte de risque d'invasion")
+```
+
+---
+
+## Étape 11 — Résumé des régions
+
+```{r summary}
+summary <- summarize_risk_regions(risk,
+                                   seuil_hotspot = 0.7)
+print(summary$resume)
+print(summary$stats_pays)
+```
+
+---
+
+## Étape 12 — Cartographie
+
+```{r plot}
+plot_risk_map(
+  risk_result    = risk,
+  ndvi           = ndvi_juin,
+  greenup_result = greenup,
+  occurrences    = df_clean,
+  export         = FALSE
+)
+```
+
+---
+
+## Étape 13 — Bulletin d'alerte
+
+```{r bulletin}
+bulletin <- generate_alert_bulletin(
+  risk_result    = risk,
+  summary_result = summary,
+  greenup_result = greenup,
+  mois           = 6,
+  annee          = 2023,
+  dossier        = "outputs"
+)
+```
+
+---
+
+## Étape 14 — Rapport complet
+
+```{r report}
+rapport <- generate_report(
+  occurrences    = df_clean,
+  rf_result      = rf,
+  eval_result    = eval,
+  risk_result    = risk,
+  summary_result = summary,
+  greenup_result = greenup,
+  annee          = 2023,
+  dossier        = "outputs"
+)
+```
+
+---
+
+## Résumé du workflow
+
+```
+import_locust_data()
+        ↓
+clean_occurrences()
+        ↓
+download_climate_data() + download_ndvi()
+        ↓
+calculate_greenup() + plot_temporal()
+        ↓
+generate_background_points() + prepare_predictors()
+        ↓
+train_rf_model()
+        ↓
+evaluate_model()
+        ↓
+predict_risk_map()
+        ↓
+summarize_risk_regions() + plot_risk_map()
+        ↓
+generate_alert_bulletin() + generate_report()
+```

@@ -7,34 +7,67 @@
 prepare_predictors(occurrences, climat, ndvi, greenup = NULL, seuil_cor = 0.9)
 }
 \arguments{
-\item{occurrences}{data.frame des occurrences nettoyées (issu de clean_occurrences)}
+\item{occurrences}{data.frame des occurrences nettoyées
+(issu de \code{clean_occurrences()})}
 
-\item{climat}{SpatRaster des variables climatiques (issu de download_climate_data)}
+\item{climat}{SpatRaster des variables climatiques
+(pluie + température, issu de \code{download_climate_data()})}
 
-\item{ndvi}{SpatRaster NDVI (issu de download_ndvi)}
+\item{ndvi}{SpatRaster NDVI (issu de \code{download_ndvi()})}
 
-\item{greenup}{SpatRaster greenup optionnel (issu de calculate_greenup). Par défaut NULL}
+\item{greenup}{SpatRaster anomalie végétation optionnel
+(issu de \code{calculate_greenup()}). Par défaut NULL}
 
-\item{seuil_cor}{Seuil de corrélation pour suppression. Par défaut 0.9}
+\item{seuil_cor}{Seuil corrélation pour suppression variables.
+Par défaut 0.9}
 }
 \value{
 Un data.frame avec les colonnes :
   \item{latitude}{Latitude du point}
   \item{longitude}{Longitude du point}
   \item{presence}{1 = présence, 0 = absence}
-  \item{...}{Variables climatiques et NDVI extraites}
+  \item{clim_XX}{Variables pluie et température extraites}
+  \item{ndvi}{Indice de végétation NDVI}
+  \item{greenup}{Anomalie végétation (si fourni)}
 }
 \description{
-Extrait les valeurs climatiques (température, précipitations) et NDVI
-pour chaque point d'occurrence, supprime les variables trop corrélées
-et génère un dataset prêt pour la modélisation Random Forest.
+Extrait les valeurs climatiques (température, précipitations/pluie)
+et NDVI pour chaque point d'occurrence, supprime les variables
+trop corrélées et génère un dataset prêt pour Random Forest.
+}
+\details{
+Variables extraites conformément au guide :
+\itemize{
+  \item \strong{pluie} — précipitations via raster climatique
+  \item \strong{température} — via raster climatique
+  \item \strong{NDVI} — indice de végétation
+  \item \strong{anomalie végétation} — via raster greenup
+}
 }
 \examples{
 \dontrun{
 df_clean <- clean_occurrences(import_locust_data("data.csv"))
-clim     <- download_climate_data(var = "prec")
-ndvi     <- download_ndvi(2023, mois = 6)
-dataset  <- prepare_predictors(df_clean, clim, ndvi)
+
+# Précipitations (pluie)
+clim_prec <- download_climate_data(var = "prec")
+
+# Température
+clim_temp <- download_climate_data(var = "tavg")
+
+# Empiler pluie + température
+clim_stack <- c(clim_prec, clim_temp)
+
+# NDVI
+ndvi <- download_ndvi(2023, mois = 6)
+
+# Anomalie végétation
+greenup <- calculate_greenup(ndvi_jan, ndvi_jul)
+
+# Préparer dataset ML
+dataset <- prepare_predictors(df_clean,
+                               climat  = clim_stack,
+                               ndvi    = ndvi,
+                               greenup = greenup$anomalie)
 head(dataset)
 }
 

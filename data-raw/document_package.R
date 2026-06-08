@@ -57,3 +57,6 @@ devtools::test()
 #Cas d'Erreur
 remove.packages("locustTrack")
 .rs.restartR()
+devtools::document()
+devtools::install()
+devtools::test()
