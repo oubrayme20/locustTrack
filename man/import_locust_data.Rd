@@ -5,20 +5,27 @@
 \title{Importer les données d'occurrence des criquets pèlerins}
 \usage{
 import_locust_data(
-  filepath,
+  filepath = NULL,
+  source = "csv",
   lat_col = "latitude",
   lon_col = "longitude",
-  date_col = "date"
+  date_col = "date",
+  limit = 500
 )
 }
 \arguments{
-\item{filepath}{Chemin vers le fichier CSV des occurrences}
+\item{filepath}{Chemin vers le fichier CSV. Par défaut NULL}
 
-\item{lat_col}{Nom de la colonne latitude. Par défaut "latitude"}
+\item{source}{Source des données : "csv", "gbif", "fao".
+Par défaut "csv"}
 
-\item{lon_col}{Nom de la colonne longitude. Par défaut "longitude"}
+\item{lat_col}{Nom colonne latitude. Par défaut "latitude"}
 
-\item{date_col}{Nom de la colonne date. Par défaut "date"}
+\item{lon_col}{Nom colonne longitude. Par défaut "longitude"}
+
+\item{date_col}{Nom colonne date. Par défaut "date"}
+
+\item{limit}{Nombre max d'occurrences GBIF. Par défaut 500}
 }
 \value{
 Un data.frame nettoyé avec les colonnes :
@@ -28,14 +35,22 @@ Un data.frame nettoyé avec les colonnes :
   \item{presence}{Présence du criquet (1)}
 }
 \description{
-Importe un fichier CSV contenant les observations de criquets pèlerins,
-vérifie les colonnes obligatoires, supprime les doublons et les
-coordonnées manquantes. Convertit en objet sf spatial.
+Importe les données de criquets pèlerins depuis trois sources :
+un fichier CSV local, GBIF directement via rgbif,
+ou FAO Locust Hub. Nettoie et convertit en objet spatial.
 }
 \examples{
 \dontrun{
-data <- import_locust_data("occurrences.csv")
-head(data)
+# Depuis CSV local
+df <- import_locust_data("occurrences.csv", source = "csv")
+
+# Depuis GBIF directement
+df <- import_locust_data(source = "gbif", limit = 200)
+
+# Depuis FAO Locust Hub
+df <- import_locust_data(source = "fao")
+
+head(df)
 }
 
 }

@@ -7,6 +7,7 @@
 calculate_greenup(
   ndvi_avant,
   ndvi_apres,
+  precipitations = NULL,
   seuil_greenup = 0.1,
   seuil_pluie = 10
 )
@@ -16,28 +17,42 @@ calculate_greenup(
 
 \item{ndvi_apres}{SpatRaster NDVI après les pluies}
 
+\item{precipitations}{SpatRaster des précipitations (optionnel).
+Par défaut NULL}
+
 \item{seuil_greenup}{Seuil minimal d'augmentation NDVI. Par défaut 0.1}
 
 \item{seuil_pluie}{Seuil minimal de précipitations (mm). Par défaut 10}
 }
 \value{
 Une liste contenant :
-  \item{anomalie}{Raster de l'anomalie NDVI (après - avant)}
-  \item{greenup}{Raster binaire des zones de verdissement}
+  \item{anomalie}{Raster anomalie NDVI (après - avant)}
+  \item{greenup}{Raster binaire zones de verdissement}
+  \item{greenup_pluie}{Raster greenup conditionné aux précipitations}
   \item{stats}{Statistiques résumées du greenup}
 }
 \description{
 Analyse le verdissement de la végétation après les précipitations.
-Détecte les zones où le NDVI augmente significativement après la pluie,
-ce qui indique des conditions favorables au développement des criquets.
+Détecte les zones où le NDVI augmente significativement après la pluie
+ET où les précipitations dépassent un seuil minimal.
+Indique les conditions favorables au développement des criquets.
 }
 \examples{
 \dontrun{
 ndvi_jan <- download_ndvi(2023, mois = 1)
 ndvi_jul <- download_ndvi(2023, mois = 7)
+clim     <- download_climate_data(var = "prec")
+
+# Sans précipitations
 result <- calculate_greenup(ndvi_jan, ndvi_jul)
-terra::plot(result$anomalie, main = "Anomalie NDVI")
-terra::plot(result$greenup,  main = "Zones de verdissement")
+
+# Avec précipitations
+result <- calculate_greenup(ndvi_jan, ndvi_jul,
+                             precipitations = clim[[6]])
+
+terra::plot(result$anomalie,     main = "Anomalie NDVI")
+terra::plot(result$greenup,      main = "Zones verdissement")
+terra::plot(result$greenup_pluie,main = "Greenup + Pluie")
 }
 
 }

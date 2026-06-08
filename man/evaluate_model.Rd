@@ -4,10 +4,14 @@
 \alias{evaluate_model}
 \title{Évaluer les performances du modèle Random Forest}
 \usage{
-evaluate_model(rf_result)
+evaluate_model(rf_result, export = FALSE, dossier = "outputs")
 }
 \arguments{
 \item{rf_result}{Liste issue de \code{train_rf_model()}}
+
+\item{export}{Si TRUE, exporte les graphiques en PNG. Par défaut FALSE}
+
+\item{dossier}{Dossier de sortie. Par défaut "outputs"}
 }
 \value{
 Une liste contenant :
@@ -18,8 +22,8 @@ Une liste contenant :
 }
 \description{
 Calcule les métriques de performance du modèle sur le jeu de test :
-Accuracy, Sensibilité, Spécificité, AUC et trace la courbe ROC.
-Métriques conformes au cours (TP, TN, FP, FN).
+Accuracy, Sensibilité, Spécificité, AUC et trace la courbe ROC
+ainsi que le graphique Observed vs Predicted.
 }
 \examples{
 \dontrun{

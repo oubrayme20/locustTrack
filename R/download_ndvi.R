@@ -1,11 +1,12 @@
 #' Télécharger les données NDVI MODIS
 #'
 #' Télécharge les données NDVI MODIS via le package MODISTools
-#' pour une période donnée ou génère des données simulées
-#' si MODISTools n'est pas disponible.
+#' pour une période donnée (un ou plusieurs mois).
+#' Génère des données simulées si MODISTools n'est pas disponible.
 #'
 #' @param annee Année d'analyse. Par défaut 2023
-#' @param mois Mois d'analyse (1-12). Par défaut 1
+#' @param mois Mois d'analyse : un entier (1-12) ou vecteur c(1,6,12).
+#'   Par défaut 1
 #' @param lon_min Longitude minimale. Par défaut -20
 #' @param lon_max Longitude maximale. Par défaut 65
 #' @param lat_min Latitude minimale. Par défaut -10
@@ -14,15 +15,19 @@
 #' @param simuler Si TRUE, génère données simulées. Par défaut FALSE
 #'
 #' @return Un objet SpatRaster avec les valeurs NDVI
+#'   (une couche par mois si multi-dates)
 #'
 #' @examples
 #' \dontrun{
-#' # Données réelles MODIS
-#' ndvi <- download_ndvi(annee = 2023, mois = 6, simuler = FALSE)
+#' # Un seul mois
+#' ndvi <- download_ndvi(annee = 2023, mois = 6)
+#'
+#' # Multi-dates : plusieurs mois
+#' ndvi_multi <- download_ndvi(annee = 2023, mois = c(1, 4, 7, 10))
+#' terra::plot(ndvi_multi)
 #'
 #' # Données simulées
 #' ndvi <- download_ndvi(annee = 2023, mois = 6, simuler = TRUE)
-#' terra::plot(ndvi, main = "NDVI - Juin 2023")
 #' }
 #'
 #' @export
@@ -41,14 +46,51 @@ download_ndvi <- function(annee      = 2023,
   }
 
   # Validation des paramètres
-  if (mois < 1 || mois > 12) {
-    stop("Le mois doit être entre 1 et 12")
+  if (any(mois < 1) || any(mois > 12)) {
+    stop("Les mois doivent être entre 1 et 12")
   }
 
-  # Créer la grille de la zone d'étude
+  if (annee < 2000 || annee > as.integer(format(Sys.Date(), "%Y"))) {
+    stop("L'année doit être entre 2000 et l'année actuelle")
+  }
+
+  # Zone d'étude
   zone <- terra::ext(lon_min, lon_max, lat_min, lat_max)
 
-  # ── Téléchargement MODIS réel ─────────────────────────────
+  # ── Téléchargement multi-dates ────────────────────────────
+  # Si plusieurs mois → téléchargement pour chaque mois
+  if (length(mois) > 1) {
+
+    message("Téléchargement NDVI multi-dates : ",
+            length(mois), " mois...")
+
+    # Télécharger chaque mois séparément
+    liste_rasters <- lapply(mois, function(m) {
+      message("  → Mois ", sprintf("%02d", m), "/", annee)
+      download_ndvi(
+        annee      = annee,
+        mois       = m,
+        lon_min    = lon_min,
+        lon_max    = lon_max,
+        lat_min    = lat_min,
+        lat_max    = lat_max,
+        resolution = resolution,
+        simuler    = simuler
+      )
+    })
+
+    # Empiler les rasters (stack)
+    ndvi_stack <- terra::rast(liste_rasters)
+
+    message("NDVI multi-dates prêt : ",
+            terra::nlyr(ndvi_stack), " couches")
+    message("Mois téléchargés : ",
+            paste(sprintf("%02d", mois), collapse = ", "))
+
+    return(ndvi_stack)
+  }
+
+  # ── Téléchargement MODIS réel (un seul mois) ──────────────
   if (!simuler) {
 
     if (!requireNamespace("MODISTools", quietly = TRUE)) {
@@ -65,7 +107,7 @@ download_ndvi <- function(annee      = 2023,
       lon_centre <- (lon_min + lon_max) / 2
       lat_centre <- (lat_min + lat_max) / 2
 
-      # Date de début et fin du mois
+      # Date du mois
       date_debut <- paste0(annee, "-",
                            sprintf("%02d", mois), "-01")
 
@@ -91,11 +133,10 @@ download_ndvi <- function(annee      = 2023,
                          resolution = resolution,
                          crs = "EPSG:4326")
 
-        # Appliquer le facteur d'échelle MODIS (0.0001)
+        # Appliquer facteur d'échelle MODIS (0.0001)
         vals_ndvi <- ndvi_raw$value * 0.0001
         vals_ndvi <- pmin(pmax(vals_ndvi, -1), 1)
 
-        # Interpoler sur la grille
         terra::values(r) <- rep(mean(vals_ndvi, na.rm = TRUE),
                                 terra::ncell(r))
 
@@ -103,15 +144,15 @@ download_ndvi <- function(annee      = 2023,
                            annee, "_",
                            sprintf("%02d", mois))
 
-        message("NDVI MODIS téléchargé avec succès !")
+        message("NDVI MODIS téléchargé : mois ",
+                sprintf("%02d", mois), "/", annee)
         message("Valeur moyenne NDVI : ",
                 round(mean(vals_ndvi, na.rm = TRUE), 3))
 
         return(r)
 
       } else {
-        message("Aucune donnée MODIS disponible.")
-        message("Utilisation des données simulées...")
+        message("Aucune donnée MODIS — données simulées utilisées")
         return(download_ndvi(annee = annee, mois = mois,
                              lon_min = lon_min, lon_max = lon_max,
                              lat_min = lat_min, lat_max = lat_max,
@@ -120,8 +161,8 @@ download_ndvi <- function(annee      = 2023,
       }
 
     }, error = function(e) {
-      message("Erreur téléchargement MODIS : ", e$message)
-      message("Utilisation des données simulées...")
+      message("Erreur MODIS : ", e$message)
+      message("Données simulées utilisées...")
       return(download_ndvi(annee = annee, mois = mois,
                            lon_min = lon_min, lon_max = lon_max,
                            lat_min = lat_min, lat_max = lat_max,
@@ -131,7 +172,7 @@ download_ndvi <- function(annee      = 2023,
   }
 
   # ── Données simulées (fallback) ───────────────────────────
-  message("Génération des données NDVI simulées pour ",
+  message("Génération NDVI simulé pour ",
           format(as.Date(paste(annee, mois, "01", sep = "-")),
                  "%B %Y"), "...")
 
@@ -143,7 +184,7 @@ download_ndvi <- function(annee      = 2023,
   n_cells <- terra::ncell(r)
   valeurs  <- runif(n_cells, min = 0.05, max = 0.55)
 
-  # Effet saisonnier
+  # Effet saisonnier réaliste
   if (mois %in% 6:9) {
     valeurs <- valeurs * 1.3
   } else if (mois %in% c(12, 1, 2)) {
@@ -152,7 +193,8 @@ download_ndvi <- function(annee      = 2023,
 
   valeurs <- pmin(pmax(valeurs, -1), 1)
   terra::values(r) <- valeurs
-  names(r) <- paste0("NDVI_", annee, "_", sprintf("%02d", mois))
+  names(r) <- paste0("NDVI_", annee, "_",
+                     sprintf("%02d", mois))
 
   message("NDVI simulé prêt : ",
           terra::nrow(r), " x ", terra::ncol(r), " pixels")

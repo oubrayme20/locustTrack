@@ -18,7 +18,8 @@ download_ndvi(
 \arguments{
 \item{annee}{Année d'analyse. Par défaut 2023}
 
-\item{mois}{Mois d'analyse (1-12). Par défaut 1}
+\item{mois}{Mois d'analyse : un entier (1-12) ou vecteur c(1,6,12).
+Par défaut 1}
 
 \item{lon_min}{Longitude minimale. Par défaut -20}
 
@@ -34,20 +35,24 @@ download_ndvi(
 }
 \value{
 Un objet SpatRaster avec les valeurs NDVI
+  (une couche par mois si multi-dates)
 }
 \description{
 Télécharge les données NDVI MODIS via le package MODISTools
-pour une période donnée ou génère des données simulées
-si MODISTools n'est pas disponible.
+pour une période donnée (un ou plusieurs mois).
+Génère des données simulées si MODISTools n'est pas disponible.
 }
 \examples{
 \dontrun{
-# Données réelles MODIS
-ndvi <- download_ndvi(annee = 2023, mois = 6, simuler = FALSE)
+# Un seul mois
+ndvi <- download_ndvi(annee = 2023, mois = 6)
+
+# Multi-dates : plusieurs mois
+ndvi_multi <- download_ndvi(annee = 2023, mois = c(1, 4, 7, 10))
+terra::plot(ndvi_multi)
 
 # Données simulées
 ndvi <- download_ndvi(annee = 2023, mois = 6, simuler = TRUE)
-terra::plot(ndvi, main = "NDVI - Juin 2023")
 }
 
 }
