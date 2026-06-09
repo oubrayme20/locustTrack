@@ -3,4 +3,10 @@
 .RData
 .Ruserdata
 .positai
-"data/climate/" 
+"data/climate/"
+.RDataTmp
+README.html
+data/climate/
+data/ndvi/
+outputs/
+*.tif
