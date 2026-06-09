@@ -7,52 +7,118 @@
 download_ndvi(
   annee = 2023,
   mois = 1,
+  occurrences = NULL,
   lon_min = -20,
   lon_max = 65,
   lat_min = -10,
   lat_max = 40,
+  marge = 2,
   resolution = 0.5,
-  simuler = FALSE
+  path = "data/ndvi"
 )
 }
 \arguments{
-\item{annee}{Année d'analyse. Par défaut 2023}
+\item{annee}{Année d'analyse (>= 2000). Par défaut 2023}
 
 \item{mois}{Mois d'analyse : un entier (1-12) ou vecteur c(1,6,12).
 Par défaut 1}
 
-\item{lon_min}{Longitude minimale. Par défaut -20}
+\item{occurrences}{data.frame avec colonnes \code{latitude} et
+\code{longitude} (issu de \code{import_locust_data()} ou
+\code{clean_occurrences()}). Quand fourni, la bbox est calculée
+automatiquement depuis ces coordonnées réelles. Par défaut NULL}
 
-\item{lon_max}{Longitude maximale. Par défaut 65}
+\item{lon_min}{Longitude minimale. Utilisé si \code{occurrences = NULL}.
+Par défaut -20}
 
-\item{lat_min}{Latitude minimale. Par défaut -10}
+\item{lon_max}{Longitude maximale. Utilisé si \code{occurrences = NULL}.
+Par défaut 65}
 
-\item{lat_max}{Latitude maximale. Par défaut 40}
+\item{lat_min}{Latitude minimale. Utilisé si \code{occurrences = NULL}.
+Par défaut -10}
 
-\item{resolution}{Résolution en degrés. Par défaut 0.5}
+\item{lat_max}{Latitude maximale. Utilisé si \code{occurrences = NULL}.
+Par défaut 40}
 
-\item{simuler}{Si TRUE, génère données simulées. Par défaut FALSE}
+\item{marge}{Marge en degrés ajoutée autour de la bbox des occurrences.
+Par défaut 2}
+
+\item{resolution}{Résolution du raster de sortie en degrés. Par défaut 0.5}
+
+\item{path}{Dossier de cache pour les fichiers téléchargés.
+Par défaut \code{"data/ndvi"}}
 }
 \value{
-Un objet SpatRaster avec les valeurs NDVI
-(une couche par mois si multi-dates)
+Un objet \code{SpatRaster} (\pkg{terra}) avec :
+\itemize{
+\item une couche par mois demandé
+\item valeurs NDVI réelles MODIS entre -1 et 1
+\item étendue spatiale couvrant la zone des occurrences + marge
+\item noms de couches au format \code{NDVI_YYYY_MM}
+}
 }
 \description{
-Télécharge les données NDVI MODIS via le package MODISTools
-pour une période donnée (un ou plusieurs mois).
-Génère des données simulées si MODISTools n'est pas disponible.
+Télécharge les données NDVI MODIS (MOD13Q1) via le package
+\strong{Produit :} MOD13Q1 v006, bande \code{250m_16_days_NDVI},
+pour une période et une zone d'étude données.
+}
+\details{
+La zone d'extraction est toujours dérivée des coordonnées réelles
+des occurrences de criquets — aucune valeur n'est simulée ou générée
+aléatoirement.
+
+\strong{Source :} MODISTools interroge l'API publique ORNL DAAC
+(\url{https://modis.ornl.gov/rst/api/v1/}) — aucune authentification
+requise, aucun compte NASA nécessaire.
+
+\strong{Produit :} MOD13A3 v006, bande \code{1_km_monthly_NDVI},
+résolution native 1 km, agrégation mensuelle.
+
+\strong{Logique spatiale :} Si \code{occurrences} est fourni, la bbox
+est calculée depuis les coordonnées réelles des observations de criquets,
+garantissant que le raster NDVI couvre exactement les zones d'intérêt
+pour l'extraction dans \code{\link{prepare_predictors}}.
+
+\strong{Rasterisation :} MODISTools retourne des pixels individuels
+avec leurs coordonnées lon/lat. Ces pixels sont rasterisés sur une
+grille régulière via \code{terra::rasterize()} — chaque pixel NDVI
+est ainsi géoréférencé et extractible aux coordonnées des occurrences.
 }
 \examples{
 \dontrun{
-# Un seul mois
-ndvi <- download_ndvi(annee = 2023, mois = 6)
+# ── Utilisation recommandée : depuis les occurrences réelles ──
+df       <- import_locust_data(source = "gbif", limit = 200)
+df_clean <- clean_occurrences(df)
 
-# Multi-dates : plusieurs mois
-ndvi_multi <- download_ndvi(annee = 2023, mois = c(1, 4, 7, 10))
+# La bbox est calculée automatiquement depuis les criquets observés
+ndvi <- download_ndvi(
+  annee       = 2023,
+  mois        = 6,
+  occurrences = df_clean
+)
+terra::plot(ndvi, main = "NDVI Juin 2023 — zone criquets")
+
+# ── Multi-dates ───────────────────────────────────────────────
+ndvi_multi <- download_ndvi(
+  annee       = 2023,
+  mois        = c(1, 4, 7, 10),
+  occurrences = df_clean
+)
 terra::plot(ndvi_multi)
 
-# Données simulées
-ndvi <- download_ndvi(annee = 2023, mois = 6, simuler = TRUE)
+# ── Bbox explicite sans occurrences ──────────────────────────
+ndvi <- download_ndvi(
+  annee   = 2023,
+  mois    = 6,
+  lon_min = -5,
+  lon_max = 40,
+  lat_min = 10,
+  lat_max = 30
+)
 }
 
+}
+\seealso{
+\code{\link{import_locust_data}}, \code{\link{clean_occurrences}},
+\code{\link{prepare_predictors}}, \code{\link{calculate_greenup}}
 }

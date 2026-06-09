@@ -6,7 +6,7 @@
 \usage{
 import_locust_data(
   filepath = NULL,
-  source = "csv",
+  source = "gbif",
   lat_col = "latitude",
   lon_col = "longitude",
   date_col = "date",
@@ -16,41 +16,69 @@ import_locust_data(
 \arguments{
 \item{filepath}{Chemin vers le fichier CSV. Par défaut NULL}
 
-\item{source}{Source des données : "csv", "gbif", "fao".
-Par défaut "csv". Si "fao" → essaie FAO puis iNaturalist puis GBIF}
+\item{source}{Source des données : "gbif", "fao", "inaturalist", "csv".
+Par défaut "gbif"}
 
-\item{lat_col}{Nom colonne latitude. Par défaut "latitude"}
+\item{lat_col}{Nom colonne latitude (pour source = "csv").
+Par défaut "latitude"}
 
-\item{lon_col}{Nom colonne longitude. Par défaut "longitude"}
+\item{lon_col}{Nom colonne longitude (pour source = "csv").
+Par défaut "longitude"}
 
-\item{date_col}{Nom colonne date. Par défaut "date"}
+\item{date_col}{Nom colonne date (pour source = "csv").
+Par défaut "date"}
 
 \item{limit}{Nombre max d'occurrences. Par défaut 500}
 }
 \value{
-Un data.frame nettoyé avec les colonnes :
-\item{latitude}{Latitude de l'observation}
-\item{longitude}{Longitude de l'observation}
-\item{date}{Date de l'observation}
-\item{presence}{Présence du criquet (1)}
+Un data.frame avec les colonnes :
+\item{latitude}{Latitude de l'observation (degrés décimaux)}
+\item{longitude}{Longitude de l'observation (degrés décimaux)}
+\item{date}{Date de l'observation (format Date)}
+\item{presence}{Présence du criquet (toujours 1)}
+L'attribut \code{attr(result, "sf")} contient l'objet sf correspondant.
 }
 \description{
 Importe les données de criquets pèlerins depuis quatre sources :
-un fichier CSV local, GBIF via rgbif, FAO Locust Hub,
-ou iNaturalist via API REST.
+GBIF via rgbif, FAO Locust Hub via API ArcGIS REST, iNaturalist
+via API REST, ou un fichier CSV local.
+}
+\details{
+\strong{Sources disponibles :}
+\itemize{
+\item \strong{gbif} (recommandée) — GBIF via \pkg{rgbif} :
+\url{https://www.gbif.org/species/1711088}.
+Données validées, coordonnées géoréférencées, intègre
+les données partenaires FAO/DLIS.
+\item \strong{fao} — FAO Locust Hub via API ArcGIS REST :
+\url{https://locust-hub-hqfao.hub.arcgis.com}.
+Données officielles FAO DLIS (Desert Locust Information Service).
+Si indisponible, bascule automatiquement sur iNaturalist puis GBIF.
+\item \strong{inaturalist} — API publique iNaturalist :
+\url{https://api.inaturalist.org/v1/}.
+Données citoyennes géoréférencées.
+\item \strong{csv} — Fichier local. Nécessite les colonnes
+latitude, longitude, date.
+}
 }
 \examples{
 \dontrun{
-# Depuis CSV local
-df <- import_locust_data("occurrences.csv", source = "csv")
-
-# Depuis GBIF directement
+# Source recommandée : GBIF
 df <- import_locust_data(source = "gbif", limit = 200)
 
-# Depuis FAO (fallback iNaturalist si indisponible)
-df <- import_locust_data(source = "fao")
+# FAO Locust Hub (fallback automatique si indisponible)
+df <- import_locust_data(source = "fao", limit = 200)
+
+# iNaturalist
+df <- import_locust_data(source = "inaturalist", limit = 100)
+
+# CSV local
+df <- import_locust_data("occurrences.csv", source = "csv")
 
 head(df)
 }
 
+}
+\seealso{
+\code{\link{clean_occurrences}}, \code{\link{download_ndvi}}
 }

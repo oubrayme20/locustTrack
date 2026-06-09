@@ -142,7 +142,9 @@ prepare_predictors <- function(occurrences,
   # ── Ajouter anomalie végétation (greenup) si fourni ───────
   if (!is.null(greenup)) {
     vals_greenup <- terra::extract(greenup, coords)
-    vals_greenup <- vals_greenup[, -1, drop = FALSE]
+    if (ncol(vals_greenup) > 1) {
+      vals_greenup <- vals_greenup[, -1, drop = FALSE]
+    }
     names(vals_greenup) <- "greenup"
     dataset <- cbind(dataset, vals_greenup)
     message("Anomalie végétation (greenup) ajoutée")

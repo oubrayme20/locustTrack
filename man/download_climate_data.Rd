@@ -52,7 +52,7 @@ clim <- download_climate_data(var = "prec", res = 10)
 # Avec humidité
 clim <- download_climate_data(var = "prec", humidite = TRUE)
 
-# Avec CHIRPS
+# Avec CHIRPS (précipitations spatialement résolues)
 clim <- download_climate_data(var = "prec", chirps = TRUE)
 
 terra::plot(clim[[1]])

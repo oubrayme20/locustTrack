@@ -8,6 +8,7 @@ plot_temporal(
   annee = 2023,
   mois_debut = 1,
   mois_fin = 12,
+  occurrences = NULL,
   lon_min = -20,
   lon_max = 65,
   lat_min = -10,
@@ -24,24 +25,37 @@ plot_temporal(
 
 \item{mois_fin}{Mois de fin (1-12). Par défaut 12}
 
-\item{lon_min}{Longitude minimale. Par défaut -20}
+\item{occurrences}{data.frame avec colonnes \code{latitude} et
+\code{longitude} (issu de \code{clean_occurrences()}).
+Si fourni, la bbox NDVI est calculée depuis les coordonnées réelles.
+Par défaut NULL}
 
-\item{lon_max}{Longitude maximale. Par défaut 65}
+\item{lon_min}{Longitude minimale. Utilisé si occurrences = NULL.
+Par défaut -20}
 
-\item{lat_min}{Latitude minimale. Par défaut -10}
+\item{lon_max}{Longitude maximale. Utilisé si occurrences = NULL.
+Par défaut 65}
 
-\item{lat_max}{Latitude maximale. Par défaut 40}
+\item{lat_min}{Latitude minimale. Utilisé si occurrences = NULL.
+Par défaut -10}
 
-\item{climat}{SpatRaster climatique optionnel pour les
-précipitations. Par défaut NULL}
+\item{lat_max}{Latitude maximale. Utilisé si occurrences = NULL.
+Par défaut 40}
 
-\item{export}{Si TRUE, exporte en PNG. Par défaut FALSE}
+\item{climat}{SpatRaster climatique optionnel pour les précipitations
+(issu de \code{download_climate_data()}). Par défaut NULL}
+
+\item{export}{Si TRUE, exporte les graphiques en PNG. Par défaut FALSE}
 
 \item{dossier}{Dossier de sortie. Par défaut "outputs"}
 }
 \value{
-Un data.frame avec les valeurs NDVI et
-précipitations moyennes par mois
+Un data.frame avec les colonnes :
+\item{mois}{Numéro du mois}
+\item{nom_mois}{Nom abrégé du mois}
+\item{ndvi_moyen}{NDVI moyen mensuel réel (MODISTools)}
+\item{annee}{Année d'analyse}
+\item{precipitation_mm}{Précipitations moyennes (si climat fourni)}
 }
 \description{
 Génère des graphiques temporels montrant l'évolution mensuelle
@@ -50,16 +64,27 @@ Permet de visualiser les conditions favorables aux criquets.
 }
 \examples{
 \dontrun{
-# NDVI seul
-temporal <- plot_temporal(annee = 2023,
-                          mois_debut = 1,
-                          mois_fin   = 12)
+df_clean <- clean_occurrences(import_locust_data(source = "gbif"))
 
-# NDVI + précipitations
+# NDVI temporel sur la zone des occurrences réelles
+temporal <- plot_temporal(
+  annee       = 2023,
+  mois_debut  = 1,
+  mois_fin    = 12,
+  occurrences = df_clean
+)
+
+# Avec précipitations WorldClim
 clim <- download_climate_data(var = "prec")
-temporal <- plot_temporal(annee  = 2023,
-                          climat = clim,
-                          export = TRUE)
+temporal <- plot_temporal(
+  annee       = 2023,
+  occurrences = df_clean,
+  climat      = clim,
+  export      = TRUE
+)
 }
 
+}
+\seealso{
+\code{\link{download_ndvi}}, \code{\link{download_climate_data}}
 }

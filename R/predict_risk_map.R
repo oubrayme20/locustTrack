@@ -58,7 +58,7 @@ predict_risk_map <- function(rf_result,
 
   # ── Renommer les couches pour correspondre aux variables du modèle ─────────
   n_clim     <- terra::nlyr(climat)
-  noms_clim  <- paste0("clim_", sprintf("%02d", 1:n_clim))
+  noms_clim  <- paste0("clim_", 1:n_clim)
 
   if (!is.null(greenup)) {
     names(stack_pred) <- c(noms_clim, "ndvi", "greenup")
@@ -67,7 +67,7 @@ predict_risk_map <- function(rf_result,
   }
 
   # ── Variables utilisées par le modèle ─────────────────────────────────────
-  vars_modele    <- colnames(modele$importance)
+  vars_modele <- attr(modele$terms, "term.labels")
   stack_pred_sel <- stack_pred[[vars_modele]]
 
   # ── Prédiction directe sur le raster ──────────

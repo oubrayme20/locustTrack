@@ -1,7 +1,7 @@
 #' Télécharger les données NDVI MODIS
 #'
-#' Télécharge les données NDVI MODIS (MOD13A3) via le package
-#' \pkg{MODISTools} (API ORNL DAAC, sans authentification requise)
+#' Télécharge les données NDVI MODIS (MOD13Q1) via le package
+#' \strong{Produit :} MOD13Q1 v006, bande \code{250m_16_days_NDVI},
 #' pour une période et une zone d'étude données.
 #'
 #' La zone d'extraction est toujours dérivée des coordonnées réelles
@@ -215,7 +215,7 @@ download_ndvi <- function(annee       = 2023,
   # sans authentification, retourne les pixels géoréférencés
 
   message("Telechargement NDVI MODIS via MODISTools...")
-  message("  Produit : MOD13A3 | Bande : 1_km_monthly_NDVI")
+  message("  Produit : MOD13Q1 | Bande : 250m_16_days_NDVI")
 
   date_debut <- paste0(annee, "-", sprintf("%02d", mois), "-01")
 
@@ -224,13 +224,13 @@ download_ndvi <- function(annee       = 2023,
   lat_centre <- (lat_min + lat_max) / 2
 
   # Rayon en km (1 degré ≈ 111 km)
-  km_lr <- ceiling((lon_max - lon_min) / 2 * 111)
-  km_ab <- ceiling((lat_max - lat_min) / 2 * 111)
+  km_lr <- min(ceiling((lon_max - lon_min) / 2 * 55), 100)
+  km_ab <- min(ceiling((lat_max - lat_min) / 2 * 55), 100)
 
   ndvi_raw <- tryCatch({
     MODISTools::mt_subset(
-      product   = "MOD13A3",
-      band      = "1_km_monthly_NDVI",
+      product   = "MOD13Q1",
+      band      = "250m_16_days_NDVI",
       lat       = lat_centre,
       lon       = lon_centre,
       start     = date_debut,
@@ -332,3 +332,4 @@ download_ndvi <- function(annee       = 2023,
 
   return(r_ndvi)
 }
+
