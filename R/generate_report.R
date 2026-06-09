@@ -92,7 +92,10 @@ generate_report <- function(occurrences,
 
   # Vérifier base64enc
   if (!requireNamespace("base64enc", quietly = TRUE)) {
-    install.packages("base64enc")
+    stop(paste0(
+      "Le package 'base64enc' est requis pour les cartes dans le rapport.\n",
+      "Installation : install.packages('base64enc')"
+    ))
   }
 
   # Carte risque continu
@@ -449,7 +452,11 @@ generate_report <- function(occurrences,
 
   # ── Export PDF ────────────────────────────────────────────
   if (!requireNamespace("pagedown", quietly = TRUE)) {
-    install.packages("pagedown")
+    stop(paste0(
+      "Le package 'pagedown' est requis pour l'export PDF.\n",
+      "Installation : install.packages('pagedown')\n",
+      "Ou ouvrez le HTML dans Chrome : File -> Print -> Save as PDF"
+    ))
   }
 
   tryCatch({
@@ -457,9 +464,11 @@ generate_report <- function(occurrences,
       input  = chemin_html,
       output = chemin_pdf
     )
-    message("Rapport PDF généré : ", chemin_pdf)
+    message("Rapport PDF genere : ", chemin_pdf)
   }, error = function(e) {
-    message("PDF non généré : ", e$message)
+    message("PDF non genere : ", e$message)
+    message("Conseil : ouvrez le HTML dans Chrome,")
+    message("  puis File -> Print -> Save as PDF")
   })
 
   return(list(

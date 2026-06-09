@@ -5,8 +5,8 @@
 
 library(locustTrack)
 
-# ── 1. Importer les données ──────────────────────────────────
-df <- import_locust_data(source = "gbif", limit = 50)
+# ── 1. Importer les données (source fiable : GBIF) ───────────
+df <- import_locust_data(source = "gbif", limit = 200)
 head(df)
 
 # ── 2. Nettoyer les occurrences ──────────────────────────────
@@ -17,21 +17,27 @@ cat("Occurrences nettoyées :", nrow(df_clean), "\n")
 data("locust_sample")
 head(locust_sample)
 
-# ── 4. Télécharger le NDVI ───────────────────────────────────
-ndvi_juin <- download_ndvi(annee   = 2023,
-                           mois    = 6,
-                           simuler = TRUE)
-terra::plot(ndvi_juin, main = "NDVI Juin 2023")
+# ── 4. Télécharger le NDVI — bbox dérivée des occurrences ────
+# La zone d'extraction est calculée automatiquement depuis
+# les coordonnées réelles des criquets observés
+ndvi_juin <- download_ndvi(
+  annee       = 2023,
+  mois        = 6,
+  occurrences = df_clean      # ← coordonnées réelles
+)
+terra::plot(ndvi_juin, main = "NDVI Juin 2023 — zone criquets")
 
-# ── 5. Multi-dates ───────────────────────────────────────────
-ndvi_multi <- download_ndvi(annee   = 2023,
-                            mois    = c(1, 4, 7, 10),
-                            simuler = TRUE)
+# ── 5. Multi-dates (bbox toujours depuis les occurrences) ────
+ndvi_multi <- download_ndvi(
+  annee       = 2023,
+  mois        = c(1, 4, 7, 10),
+  occurrences = df_clean
+)
 terra::plot(ndvi_multi)
 
 # ── 6. Greenup ───────────────────────────────────────────────
-ndvi_jan <- download_ndvi(2023, mois = 1, simuler = TRUE)
-ndvi_jul <- download_ndvi(2023, mois = 7, simuler = TRUE)
+ndvi_jan <- download_ndvi(2023, mois = 1,  occurrences = df_clean)
+ndvi_jul <- download_ndvi(2023, mois = 7,  occurrences = df_clean)
 
 greenup <- calculate_greenup(
   ndvi_avant    = ndvi_jan,

@@ -231,7 +231,11 @@ generate_alert_bulletin <- function(risk_result,
 
   # ── Export PDF ────────────────────────────────────────────
   if (!requireNamespace("pagedown", quietly = TRUE)) {
-    install.packages("pagedown")
+    stop(paste0(
+      "Le package 'pagedown' est requis pour l'export PDF.\n",
+      "Installation : install.packages('pagedown')\n",
+      "Ou ouvrez le HTML dans Chrome : File -> Print -> Save as PDF"
+    ))
   }
 
   tryCatch({
@@ -239,10 +243,11 @@ generate_alert_bulletin <- function(risk_result,
       input  = chemin_html,
       output = chemin_pdf
     )
-    message("Bulletin PDF généré : ", chemin_pdf)
+    message("Bulletin PDF genere : ", chemin_pdf)
   }, error = function(e) {
     message("Export PDF non disponible : ", e$message)
-    message("Ouvrez le HTML dans Chrome et faites File → Print → Save as PDF")
+    message("Conseil : ouvrez le HTML dans Chrome,")
+    message("  puis File -> Print -> Save as PDF")
   })
 
   return(list(

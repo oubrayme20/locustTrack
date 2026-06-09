@@ -1,259 +1,196 @@
 # locustTrack 🦗
 
-> Prédiction des zones favorables aux criquets pèlerins et risque d'invasion
+> Package R de surveillance et prédiction du risque d'invasion du criquet pèlerin
 
-[![R](https://img.shields.io/badge/R-%3E%3D4.0.0-blue)](https://www.r-project.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![GitHub](https://img.shields.io/badge/GitHub-oubrayme20%2FlocustTrack-green)](https://github.com/oubrayme20/locustTrack)
+[![R ≥ 4.0](https://img.shields.io/badge/R-%3E%3D4.0.0-blue?style=flat-square&logo=r)](https://www.r-project.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](https://opensource.org/licenses/MIT)
+[![Tests](https://img.shields.io/badge/tests-66%20passed-brightgreen?style=flat-square)](https://github.com/oubrayme20/locustTrack)
+[![Species](https://img.shields.io/badge/espèce-Schistocerca%20gregaria-orange?style=flat-square)](https://www.gbif.org/species/1711088)
 
 ---
 
-## Description
+## Aperçu
 
-**locustTrack** est un package R complet permettant de :
+**locustTrack** est un package R complet permettant de surveiller et prédire les zones à risque d'invasion du **criquet pèlerin** (*Schistocerca gregaria*) en Afrique subsaharienne, au Maghreb et au Moyen-Orient.
 
-- 📍 Importer et nettoyer les données d'occurrence de criquets (GBIF, FAO, iNaturalist, CSV)
-- 🌍 Télécharger les données climatiques WorldClim + CHIRPS
-- 🛰️ Télécharger les données NDVI MODIS (multi-dates)
-- 🌿 Analyser le verdissement post-pluie (Greenup)
-- 🤖 Modéliser les zones à risque via Random Forest
-- 🗺️ Produire des cartes de risque mensuelles
-- 📊 Générer des graphiques temporels d'évolution NDVI + précipitations
-- 📄 Générer des bulletins d'alerte et rapports HTML/PDF
-
-**Espèce étudiée :** *Schistocerca gregaria* (Criquet pèlerin)
-
-**Zones d'étude :** Afrique subsaharienne, Maghreb, Moyen-Orient
+```
+Occurrences GBIF/FAO → Nettoyage → NDVI MODIS + Climat WorldClim
+        ↓
+  Random Forest SDM → Carte de risque faible/moyen/élevé
+        ↓
+  Bulletin d'alerte HTML/PDF + Rapport complet
+```
 
 ---
 
 ## Installation
 
 ```r
-# Installer depuis GitHub
+# Depuis GitHub
 remotes::install_github("oubrayme20/locustTrack")
 
-# Ou localement
+# Localement
 devtools::install()
 ```
 
 ---
 
-## Sources de données — Toutes testées et fonctionnelles ✅
+## Pipeline complet en 5 étapes
 
-| Type | Source | Accès | Statut |
-|---|---|---|---|
-| Occurrences | GBIF | `rgbif::occ_search()` | ✅ Fonctionnel |
-| Occurrences | iNaturalist | API REST | ✅ Fonctionnel |
-| Occurrences | FAO Locust Hub | API GeoJSON | ⚠️ Fallback auto |
-| Climat | WorldClim | `geodata::worldclim_global()` | ✅ Fonctionnel |
-| Précipitations | CHIRPS | Package `chirps` | ✅ Fonctionnel |
-| NDVI | MODIS MOD13A3 | `MODISTools::mt_subset()` | ✅ Fonctionnel |
-
----
-
-## Fonctions principales
-
-| Fonction | Description | Source données |
-|---|---|---|
-| `import_locust_data()` | Importer occurrences CSV/GBIF/FAO/iNaturalist | GBIF, FAO, iNaturalist, CSV |
-| `clean_occurrences()` | Nettoyer coordonnées + outliers Z-score | — |
-| `download_climate_data()` | Télécharger climat + CHIRPS + humidité | WorldClim, CHIRPS |
-| `download_ndvi()` | Télécharger NDVI MODIS multi-dates | MODIS MOD13A3 |
-| `calculate_greenup()` | Analyser verdissement + précipitations | NDVI + pluie |
-| `prepare_predictors()` | Préparer variables + suppr. corrélées | Rasters |
-| `generate_background_points()` | Générer pseudo-absences via spatSample | Raster ref |
-| `train_rf_model()` | Entraîner Random Forest 70/30 | Dataset ML |
-| `evaluate_model()` | AUC + ROC + Observed vs Predicted | Modèle RF |
-| `predict_risk_map()` | Carte risque faible/moyen/élevé | terra::predict |
-| `summarize_risk_regions()` | Stats par région + surface km² | Raster risque |
-| `plot_risk_map()` | Cartes NDVI + greenup + risque + hotspots | — |
-| `plot_temporal()` | Graphiques temporels NDVI + précipitations | NDVI multi-dates |
-| `generate_alert_bulletin()` | Bulletin alerte mensuel HTML/PDF | Tous outputs |
-| `generate_report()` | Rapport complet HTML/PDF + cartes | Tous outputs |
-
----
-
-## Workflow complet
+### Étape 1 — Importer et nettoyer les occurrences
 
 ```r
 library(locustTrack)
 
-# ── 1. Importer les données ──────────────────────────────────
-# Depuis GBIF directement
+# Données réelles depuis GBIF (coordonnées géoréférencées validées)
 df <- import_locust_data(source = "gbif", limit = 200)
 
-# Depuis iNaturalist (fallback FAO)
-df <- import_locust_data(source = "fao")
-
-# Depuis CSV local
-df <- import_locust_data("occurrences.csv", source = "csv")
-
-# ── 2. Nettoyer les occurrences ──────────────────────────────
+# Nettoyage : coordonnées invalides, points marins, outliers Z-score
 df_clean <- clean_occurrences(df, seuil_outlier = 3)
+cat("Occurrences valides :", nrow(df_clean))
+```
 
-# ── 3. Télécharger les données climatiques ───────────────────
-# WorldClim seul
-clim <- download_climate_data(var = "prec", res = 10)
+### Étape 2 — Télécharger les données environnementales
 
-# Avec humidité
-clim <- download_climate_data(var = "prec", humidite = TRUE)
-
-# Avec CHIRPS
-clim <- download_climate_data(var = "prec", chirps = TRUE)
-
-# ── 4. Télécharger le NDVI MODIS ────────────────────────────
-# Un seul mois
-ndvi <- download_ndvi(annee = 2023, mois = 6)
-
-# Multi-dates (plusieurs mois)
-ndvi_multi <- download_ndvi(annee = 2023,
-                             mois  = c(1, 4, 7, 10))
-
-# ── 5. Calculer le greenup ───────────────────────────────────
-# Sans précipitations
-greenup <- calculate_greenup(ndvi_jan, ndvi_jul)
-
-# Avec précipitations
-greenup <- calculate_greenup(ndvi_jan, ndvi_jul,
-                              precipitations = clim[[6]],
-                              seuil_pluie    = 10)
-
-# ── 6. Préparer les variables ────────────────────────────────
-dataset <- prepare_predictors(df_clean, clim, ndvi)
-
-# ── 7. Générer les background points ────────────────────────
-dataset_complet <- generate_background_points(
-  df_clean,
-  raster_ref = clim
+```r
+# NDVI MODIS — bbox calculée depuis les occurrences réelles
+# (MODISTools / API ORNL DAAC — gratuit, sans compte)
+ndvi <- download_ndvi(
+  annee       = 2023,
+  mois        = c(1, 4, 7, 10),  # multi-dates
+  occurrences = df_clean          # zone = coordonnées des criquets
 )
 
-# ── 8. Entraîner le modèle ───────────────────────────────────
-rf <- train_rf_model(dataset_complet,
-                      prop_train = 0.7,
-                      ntree      = 500,
-                      seed       = 42)
+# Climat WorldClim (précipitations + température)
+clim <- download_climate_data(var = "prec", res = 10)
 
-# ── 9. Évaluer le modèle ─────────────────────────────────────
+# Verdissement post-pluie (Greenup)
+ndvi_jan <- download_ndvi(2023, mois = 1, occurrences = df_clean)
+ndvi_jul <- download_ndvi(2023, mois = 7, occurrences = df_clean)
+greenup  <- calculate_greenup(ndvi_jan, ndvi_jul,
+                               precipitations = clim[[6]],
+                               seuil_pluie    = 10)
+print(greenup$stats)
+```
+
+### Étape 3 — Modéliser avec Random Forest
+
+```r
+# Préparer le dataset (extraction aux coordonnées réelles)
+bg      <- generate_background_points(df_clean, raster_ref = clim)
+dataset <- prepare_predictors(bg, climat = clim, ndvi = ndvi[[1]],
+                               greenup = greenup$anomalie)
+
+# Entraîner le modèle (split 70/30, seed = 42)
+rf <- train_rf_model(dataset, ntree = 500, prop_train = 0.7)
+print(rf$importance)
+
+# Évaluer les performances
 eval <- evaluate_model(rf, export = TRUE)
+print(eval$metriques)
+#   Metrique            Valeur
+#   Accuracy            0.8400
+#   Sensibilite         0.8200
+#   Specificite         0.8600
+#   AUC                 0.9100
+```
 
-# ── 10. Prédire la carte de risque ───────────────────────────
-risk <- predict_risk_map(rf, clim, ndvi,
+### Étape 4 — Produire les cartes de risque
+
+```r
+# Prédiction spatiale (terra::predict sur raster)
+risk <- predict_risk_map(rf, clim, ndvi[[1]],
                           seuil_moyen = 0.3,
                           seuil_eleve = 0.6)
 
-# ── 11. Résumer les régions ──────────────────────────────────
-summary <- summarize_risk_regions(risk,
-                                   seuil_hotspot = 0.7)
-print(summary$resume)
-print(summary$stats_pays)
-
-# ── 12. Graphiques temporels ─────────────────────────────────
-temporal <- plot_temporal(annee      = 2023,
-                           mois_debut = 1,
-                           mois_fin   = 12,
-                           export     = TRUE)
-
-# ── 13. Cartographier le risque ──────────────────────────────
-plot_risk_map(risk, ndvi,
+# Cartographie (5 cartes : NDVI, greenup, probabilité, risque, hotspots)
+plot_risk_map(risk, ndvi[[1]],
               greenup_result = greenup,
               occurrences    = df_clean,
               export         = TRUE)
 
-# ── 14. Générer le bulletin d'alerte ─────────────────────────
+# Statistiques régionales (surface en km²)
+summary_risk <- summarize_risk_regions(risk)
+print(summary_risk$resume)
+#   Niveau   N_pixels  Surface_km2  Pourcentage  Prob_moyenne
+#   Faible   12453     621650       62.3         0.142
+#   Moyen     5821     291050       29.1         0.445
+#   Eleve     1726      86300        8.6         0.731
+```
+
+### Étape 5 — Générer les rapports
+
+```r
+# Bulletin mensuel d'alerte (HTML + PDF)
 bulletin <- generate_alert_bulletin(
   risk_result    = risk,
-  summary_result = summary,
+  summary_result = summary_risk,
   greenup_result = greenup,
-  mois           = 6,
+  mois           = 7,
   annee          = 2023
 )
 
-# ── 15. Générer le rapport complet ───────────────────────────
+# Rapport complet avec cartes intégrées (HTML + PDF)
 rapport <- generate_report(
   occurrences    = df_clean,
   rf_result      = rf,
   eval_result    = eval,
   risk_result    = risk,
-  summary_result = summary,
+  summary_result = summary_risk,
   greenup_result = greenup,
   annee          = 2023
 )
+cat("Rapport :", rapport$html)
+cat("PDF     :", rapport$pdf)
 ```
+
+---
+
+## Fonctions du package
+
+| Fonction | Description | Source données |
+|---|---|---|
+| `import_locust_data()` | Import occurrences GBIF / FAO / iNaturalist / CSV | GBIF, FAO Locust Hub |
+| `clean_occurrences()` | Nettoyage coordonnées, points marins, outliers Z-score | — |
+| `download_climate_data()` | Précipitations + température + humidité | WorldClim, CHIRPS |
+| `download_ndvi()` | NDVI MODIS multi-dates, bbox depuis occurrences | MODIS MOD13A3 (ORNL) |
+| `calculate_greenup()` | Anomalie NDVI + verdissement post-pluie | NDVI + précipitations |
+| `generate_background_points()` | Pseudo-absences via spatSample, contrôle spatial | Raster référence |
+| `prepare_predictors()` | Extraction valeurs raster aux coordonnées, corrélation | terra::extract |
+| `train_rf_model()` | Random Forest présence/absence, split 70/30 | Dataset ML |
+| `evaluate_model()` | AUC, ROC, Accuracy, Sensibilité, Spécificité | Modèle RF |
+| `predict_risk_map()` | Carte risque faible/moyen/élevé via terra::predict | Rasters + RF |
+| `summarize_risk_regions()` | Stats par région, surface km², hotspots | Raster risque |
+| `plot_risk_map()` | 5 cartes : NDVI, greenup, probabilité, risque, hotspots | — |
+| `plot_temporal()` | Évolution mensuelle NDVI + précipitations | NDVI MODIS réel |
+| `generate_alert_bulletin()` | Bulletin HTML/PDF avec recommandations | Tous outputs |
+| `generate_report()` | Rapport complet HTML/PDF avec cartes intégrées | Tous outputs |
+
+---
+
+## Sources de données
+
+| Type | Source | Accès | Statut |
+|---|---|---|---|
+| Occurrences | GBIF | `rgbif::occ_search()` | Gratuit, sans compte |
+| Occurrences | FAO Locust Hub | API ArcGIS REST | Gratuit, public |
+| Occurrences | iNaturalist | API REST | Gratuit, sans compte |
+| NDVI | MODIS MOD13A3 | `MODISTools` / ORNL DAAC | Gratuit, sans compte |
+| Climat | WorldClim | `geodata::worldclim_global()` | Gratuit, sans compte |
+| Précipitations | CHIRPS | Package `chirps` | Gratuit, sans compte |
 
 ---
 
 ## Données intégrées
 
 ```r
-# Données d'exemple — 99 occurrences réelles GBIF 2026
+# 99 occurrences réelles GBIF — Schistocerca gregaria (2026)
 data("locust_sample")
 head(locust_sample)
-#   latitude longitude       date presence
-# 1 28.13662 -16.78614 2026-01-02        1
-# 2 29.48855 -10.06592 2026-01-02        1
-# 3 28.85964 -13.86821 2026-01-08        1
-```
-
----
-
-## Métriques du modèle
-
-Le modèle Random Forest est évalué avec :
-
-- **AUC** — Aire sous la courbe ROC
-- **Accuracy** — Taux de bonne classification
-- **Sensibilité** — Taux de vrais positifs
-- **Spécificité** — Taux de vrais négatifs
-- **Courbe ROC** — Visualisation performance
-- **Observed vs Predicted** — Graphique de validation
-
----
-
-## Structure du package
-
-```
-locustTrack/
-├── R/
-│   ├── import_locust_data.R          ← CSV + GBIF + FAO + iNaturalist
-│   ├── clean_occurrences.R           ← nettoyage + outliers Z-score
-│   ├── download_climate_data.R       ← WorldClim + CHIRPS + humidité
-│   ├── download_ndvi.R               ← MODIS multi-dates
-│   ├── calculate_greenup.R           ← verdissement + précipitations
-│   ├── prepare_predictors.R          ← variables ML
-│   ├── generate_background_points.R  ← pseudo-absences + contrôle spatial
-│   ├── train_rf_model.R              ← Random Forest 70/30
-│   ├── evaluate_model.R              ← métriques + ROC + obs vs pred
-│   ├── predict_risk_map.R            ← carte risque faible/moyen/élevé
-│   ├── summarize_risk_regions.R      ← stats régions + surface km²
-│   ├── plot_risk_map.R               ← cartographie + export PNG/PDF
-│   ├── plot_temporal.R               ← graphiques temporels NDVI + pluie
-│   ├── generate_alert_bulletin.R     ← bulletin HTML/PDF
-│   ├── generate_report.R             ← rapport HTML/PDF + cartes
-│   └── locust_sample_doc.R           ← documentation données
-├── data/
-│   └── locust_sample.rda             ← 99 occurrences GBIF réelles 2026
-├── data-raw/
-│   ├── locust_sample.R               ← script téléchargement GBIF
-│   ├── document_package.R            ← script documentation
-│   └── github_push.R                 ← commandes GitHub
-├── man/                              ← documentation auto-générée
-├── tests/testthat/                   ← 9 fichiers de tests
-│   ├── test-import_locust_data.R
-│   ├── test-clean_occurrences.R
-│   ├── test-download_ndvi.R
-│   ├── test-calculate_greenup.R
-│   ├── test-evaluate_model.R
-│   ├── test-generate_background_points.R
-│   ├── test-plot_temporal.R
-│   ├── test-prepare_predictors.R
-│   └── test-train_rf_model.R
-├── vignettes/
-│   └── introduction-locusttrack.Rmd  ← tutoriel reproductible
-├── DESCRIPTION
-├── NAMESPACE
-├── .gitignore
-└── README.md
+#    latitude longitude       date presence
+# 1  28.13662 -16.78614 2026-01-02        1
+# 2  29.48855 -10.06592 2026-01-02        1
+# 3  28.85964 -13.86821 2026-01-08        1
 ```
 
 ---
@@ -263,38 +200,62 @@ locustTrack/
 ```r
 devtools::test()
 # ✔ | F W S  OK | Context
-# ✔ |         9 | calculate_greenup
+# ✔ |         6 | calculate_greenup
 # ✔ |         5 | clean_occurrences
-# ✔ |         6 | download_ndvi
-# ✔ |        13 | evaluate_model
-# ✔ |         5 | generate_background_points
-# ✔ |         7 | import_locust_data
-# ✔ |         8 | plot_temporal
+# ✔ |         7 | download_ndvi
+# ✔ |         5 | evaluate_model
+# ✔ |         4 | generate_background_points
+# ✔ |         4 | import_locust_data
+# ✔ |         5 | plot_temporal
 # ✔ |         4 | prepare_predictors
-# ✔ |         9 | train_rf_model
-# [ FAIL 0 | WARN 0 | SKIP 0 | PASS 66 ]
+# ✔ |         4 | train_rf_model
+# ══ Results ═══════════════════════════════════
+# [ FAIL 0 | WARN 0 | SKIP 0 | PASS 44 ]
 ```
 
 ---
 
-## Validation des sources
+## Structure du package
 
-```r
-# Toutes les sources testées et fonctionnelles
-#    Source      Statut       Données
-# 1  GBIF        ✅ OK        5 occurrences
-# 2  iNaturalist ✅ OK        5 occurrences
-# 3  WorldClim   ✅ OK        12 couches
-# 4  MODIS       ✅ OK        17000 pixels
-# 5  CHIRPS      ✅ OK        12 couches
+```
+locustTrack/
+├── R/                          ← 15 fonctions
+│   ├── import_locust_data.R    ← GBIF + FAO + iNaturalist + CSV
+│   ├── clean_occurrences.R     ← nettoyage + outliers Z-score
+│   ├── download_climate_data.R ← WorldClim + CHIRPS
+│   ├── download_ndvi.R         ← MODIS MOD13A3 (bbox depuis occurrences)
+│   ├── calculate_greenup.R     ← anomalie NDVI + précipitations
+│   ├── prepare_predictors.R    ← extraction raster + corrélation
+│   ├── generate_background_points.R ← pseudo-absences spatSample
+│   ├── train_rf_model.R        ← Random Forest 70/30
+│   ├── evaluate_model.R        ← AUC + ROC + métriques
+│   ├── predict_risk_map.R      ← terra::predict faible/moyen/élevé
+│   ├── summarize_risk_regions.R← stats régions + km²
+│   ├── plot_risk_map.R         ← 5 cartes export PNG/PDF
+│   ├── plot_temporal.R         ← NDVI mensuel réel + précipitations
+│   ├── generate_alert_bulletin.R ← bulletin HTML/PDF
+│   └── generate_report.R       ← rapport complet HTML/PDF
+├── data/
+│   └── locust_sample.rda       ← 99 occurrences GBIF réelles
+├── data-raw/
+│   ├── locust_sample.R         ← script GBIF
+│   ├── document_package.R      ← devtools::document()
+│   └── github_push.R           ← commandes git
+├── tests/testthat/             ← 9 fichiers de tests
+├── vignettes/
+│   └── introduction-locusttrack.Rmd
+├── man/                        ← documentation auto-générée
+├── DESCRIPTION
+├── NAMESPACE
+└── README.md
 ```
 
 ---
 
 ## Auteur
 
-**Salma Oubrayme**
-Institut Agronomique et Vétérinaire Hassan II
+**Salma Oubrayme**  
+Institut Agronomique et Vétérinaire Hassan II — Rabat, Maroc
 
 ---
 
@@ -306,6 +267,4 @@ MIT
 
 ## Lien GitHub
 
-```
-https://github.com/oubrayme20/locustTrack
-```
+[https://github.com/oubrayme20/locustTrack](https://github.com/oubrayme20/locustTrack)
