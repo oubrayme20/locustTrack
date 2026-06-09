@@ -5,7 +5,10 @@
 # ============================================================
 
 test_that("import_locust_data retourne une erreur si fichier inexistant", {
-  expect_error(import_locust_data("fichier_inexistant.csv"))
+  expect_error(
+    import_locust_data("fichier_inexistant.csv", source = "csv"),
+    "introuvable"
+  )
 })
 
 test_that("import_locust_data retourne un data.frame", {
