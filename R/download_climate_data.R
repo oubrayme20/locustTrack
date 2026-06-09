@@ -196,3 +196,4 @@ download_climate_data <- function(var      = "prec",
 
   return(clim_zone)
 }
+
