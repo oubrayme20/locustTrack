@@ -5,8 +5,8 @@ Version: 0.1.0
 Authors@R: person(
     "Salma", "Oubrayme",
     email = "salma.oubrayme@iav.ac.ma",
-    role  = c("aut", "cre")
-  )
+    role = c("aut", "cre")
+    )
 Description: Un package R pour analyser les conditions favorables aux
     criquets pelerins (Schistocerca gregaria), modeliser les zones a
     risque d'invasion via Random Forest, suivre la vegetation apres
@@ -28,11 +28,10 @@ Imports:
     base64enc
 Suggests:
     testthat (>= 3.0.0),
-    knitr,
-    rmarkdown,
+    knitr (>= 1.30),
+    rmarkdown (>= 2.0),
     chirps,
     pagedown
 VignetteBuilder: knitr
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 8.0.0
-Config/roxygen2/version: 8.0.0
+RoxygenNote: 7.3.0
