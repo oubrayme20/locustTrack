@@ -4,7 +4,7 @@
 
 [![R ≥ 4.0](https://img.shields.io/badge/R-%3E%3D4.0.0-blue?style=flat-square&logo=r)](https://www.r-project.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/tests-66%20passed-brightgreen?style=flat-square)](https://github.com/oubrayme20/locustTrack)
+[![Tests](https://img.shields.io/badge/tests-44%20passed-brightgreen?style=flat-square)](https://github.com/oubrayme20/locustTrack)
 [![Species](https://img.shields.io/badge/espèce-Schistocerca%20gregaria-orange?style=flat-square)](https://www.gbif.org/species/1711088)
 
 ---
