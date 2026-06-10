@@ -73,6 +73,14 @@ greenup  <- calculate_greenup(ndvi_jan, ndvi_jul,
 print(greenup$stats)
 ```
 
+**Outputs visuels — Végétation :**
+
+| Carte NDVI (Indice de végétation) | Carte Greenup (Verdissement post-pluie) |
+|:---:|:---:|
+| ![NDVI](man/figures/carte_ndvi.png) | ![Greenup](man/figures/carte_greenup.png) |
+
+---
+
 ### Étape 3 — Modéliser avec Random Forest
 
 ```r
@@ -94,6 +102,14 @@ print(eval$metriques)
 #   Specificite         0.8600
 #   AUC                 0.9100
 ```
+
+**Outputs visuels — Évaluation du modèle :**
+
+| Courbe ROC | Observed vs Predicted | Distribution des probabilités |
+|:---:|:---:|:---:|
+| ![ROC](man/figures/courbe_ROC.png) | ![ObsPred](man/figures/observed_vs_predicted.png) | ![Distrib](man/figures/distribution_probabilites.png) |
+
+---
 
 ### Étape 4 — Produire les cartes de risque
 
@@ -117,6 +133,14 @@ print(summary_risk$resume)
 #   Moyen     5821     291050       29.1         0.445
 #   Eleve     1726      86300        8.6         0.731
 ```
+
+**Outputs visuels — Cartes de risque :**
+
+| Carte de probabilité | Carte de risque classée | Carte des hotspots |
+|:---:|:---:|:---:|
+| ![Proba](man/figures/carte_probabilite.png) | ![Risque](man/figures/carte_risque_classe.png) | ![Hotspots](man/figures/carte_hotspots.png) |
+
+---
 
 ### Étape 5 — Générer les rapports
 
